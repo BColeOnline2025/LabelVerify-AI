@@ -1,0 +1,135 @@
+﻿@page
+@model IndexModel
+
+<div class="container mt-4">
+
+    <h2>Alcohol Label Verification</h2>
+
+    <p class="text-muted">
+        Upload a label and compare it to application data.
+    </p>
+
+    <form method="post" enctype="multipart/form-data">
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+        <div class="mb-3">
+            <label class="form-label">Brand Name</label>
+            <input asp-for="Input.BrandName"
+                   class="form-control" />
+            <span asp-validation-for="Input.BrandName" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Class / Type</label>
+            <input asp-for="Input.ClassType"
+                   class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Alcohol Content</label>
+            <input asp-for="Input.AlcoholContent"
+                   class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Net Contents</label>
+            <input asp-for="Input.NetContents"
+                   class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Label Image</label>
+            <input asp-for="Input.LabelFile"
+                   type="file"
+                   class="form-control" />
+            <span asp-validation-for="Input.LabelFile" class="text-danger"></span>
+        </div>
+        
+        <button class="btn btn-primary btn-lg">
+            Verify Label
+        </button>
+
+    </form>
+
+</div>
+
+@if (Model.Result != null)
+{
+    <hr />
+
+    <h3>Verification Result</h3>
+
+    <div class="row mb-4">
+
+        <div class="col-md-4">
+            <div class="card border-success">
+                <div class="card-body">
+                    <h5>Overall Score</h5>
+                    <h2>@Model.Result.OverallScore%</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-primary">
+                <div class="card-body">
+                    <h5>Recommendation</h5>
+                    <h2>@Model.Result.Recommendation</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-info">
+                <div class="card-body">
+                    <h5>Checks Run</h5>
+                    <h2>@Model.Result.Checks.Count</h2>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Field</th>
+                <th>Status</th>
+                <th>Confidence</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var check in Model.Result.Checks)
+            {
+                <tr>
+                    <td>@check.FieldName</td>
+                    @if (check.WasSkipped)
+                    {
+                        <td class="badge bg-secondary">Skipped</td>
+                    }
+                    else if (check.Status == "Pass")
+                    {
+                        <td class="badge bg-success">Pass</td>
+                    }
+                    else if (check.Status == "Review")
+                    {
+                        <td class="badge bg-warning text-dark">Review</td>
+                    }
+                    else
+                    {
+                        <td class="badge bg-danger">Fail</td>
+                    }
+                    <td>@check.ConfidenceScore%</td>
+                    <td>@check.Notes</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <h4>Extracted OCR Text</h4>
+    <pre>@Model.ExtractedText</pre>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

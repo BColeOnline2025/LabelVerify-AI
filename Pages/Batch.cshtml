@@ -1,0 +1,105 @@
+﻿@page
+@model LabelVerify.Web.Pages.BatchModel
+
+<h2>Batch Label Review</h2>
+
+<form method="post" enctype="multipart/form-data">
+
+    <div class="mb-3">
+        <label>Select Label Files</label>
+        <input asp-for="Input.LabelFiles"
+               type="file"
+               multiple
+               class="form-control" />
+    </div>
+
+    <button class="btn btn-primary">
+        Process Batch
+    </button>
+
+</form>
+
+@if (Model.Results.Any())
+{
+    <br />
+    <div class="d-flex justify-content-end mb-3">
+        <a asp-page="/Export"
+               class="btn btn-success">
+            Export Results (CSV)
+        </a><br />
+    </div>
+    <div class="row mb-4">
+
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <h6>Total Files</h6>
+                    <h2>@Model.TotalFiles</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h6>Approved</h6>
+                    <h2>@Model.ApprovedCount</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h6>Review</h6>
+                    <h2>@Model.ReviewCount</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-danger">
+                <div class="card-body text-center">
+                    <h6>Rejected</h6>
+                    <h2>@Model.RejectCount</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mt-3">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <h6>Avg Time</h6>
+                    <h2>@Model.AverageProcessingTime.ToString("N0") ms</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <table class="table table-striped">
+
+        <thead>
+            <tr>
+                <th>File</th>
+                <th>Recommendation</th>
+                <th>Score</th>
+                <th>Time</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            @foreach (var item in Model.Results)
+            {
+                <tr>
+                    <td>@item.FileName</td>
+                    <td>@item.Recommendation</td>
+                    <td>@item.Score%</td>
+                    <td>@item.ProcessingTimeMs ms</td>
+                </tr>
+            }
+
+        </tbody>
+
+    </table>
+}
