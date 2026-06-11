@@ -7,8 +7,7 @@ namespace LabelVerify.Web.Services
     {
         private readonly IEnumerable<ILabelRule> _rules;
 
-        public LabelVerificationService(
-            IEnumerable<ILabelRule> rules)
+        public LabelVerificationService(IEnumerable<ILabelRule> rules)
         {
             _rules = rules;
         }
@@ -18,26 +17,34 @@ namespace LabelVerify.Web.Services
             string extractedText)
         {
             var checks = _rules
-                .Select(r => r.Evaluate(
-                    application,
-                    extractedText))
+                .Select(rule => rule.Evaluate(application, extractedText))
                 .ToList();
 
-            var score =
-                checks.Any()
-                ? (int)checks.Average(x => x.ConfidenceScore)
+            var scoredChecks = checks
+                .Where(check => !check.WasSkipped)
+                .ToList();
+
+            var overallScore = scoredChecks.Any()
+                ? (int)Math.Round(scoredChecks.Average(check => check.ConfidenceScore))
                 : 0;
+
+            var hasFail = scoredChecks.Any(check =>
+                string.Equals(check.Status, "Fail", StringComparison.OrdinalIgnoreCase));
+
+            var hasReview = scoredChecks.Any(check =>
+                string.Equals(check.Status, "Review", StringComparison.OrdinalIgnoreCase));
+
+            var recommendation = hasFail
+                ? "Reject"
+                : hasReview
+                    ? "Review"
+                    : "Approve";
 
             return new VerificationResult
             {
                 Checks = checks,
-                OverallScore = score,
-                Recommendation =
-                    score >= 95
-                        ? "Approve"
-                        : score >= 80
-                            ? "Review"
-                            : "Reject"
+                OverallScore = overallScore,
+                Recommendation = recommendation
             };
         }
     }

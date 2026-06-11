@@ -80,41 +80,48 @@
     <h3>Verification Result</h3>
 
     <div class="row mb-4">
-
-        <div class="col-md-4">
-            <div class="card border-success">
-                <div class="card-body">
-                    <h5>Overall Score</h5>
+        <div class="col-md-3">
+            <div class="card dashboard-card border-success">
+                <div class="card-body text-center">
+                    <h6>Overall Score</h6>
                     <h2>@Model.Result.OverallScore%</h2>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-4">
-            <div class="card border-primary">
-                <div class="card-body">
-                    <h5>Recommendation</h5>
+        <div class="col-md-3">
+            <div class="card dashboard-card border-primary">
+                <div class="card-body text-center">
+                    <h6>Recommendation</h6>
                     <h2>@Model.Result.Recommendation</h2>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-4">
-            <div class="card border-info">
-                <div class="card-body">
-                    <h5>Checks Run</h5>
-                    <h2>@Model.Result.Checks.Count</h2>
+        <div class="col-md-3">
+            <div class="card dashboard-card border-info">
+                <div class="card-body text-center">
+                    <h6>Checks Run</h6>
+                    <h2>@Model.Result.ExecutedChecks</h2>
                 </div>
             </div>
         </div>
 
+        <div class="col-md-3">
+            <div class="card dashboard-card border-secondary">
+                <div class="card-body text-center">
+                    <h6>Skipped Checks</h6>
+                    <h2>@Model.Result.SkippedChecks</h2>
+                </div>
+            </div>
+        </div>
     </div>
-    <table class="table table-bordered">
+    <table class="table table-bordered table-striped mb-0" style="table-layout:fixed;">
         <thead>
             <tr>
-                <th>Field</th>
-                <th>Status</th>
-                <th>Confidence</th>
+                <th style="width:180px;">Field</th>
+                <th style="width:120px; text-align:center;">Status</th>
+                <th style="width:120px; text-align:center;">Confidence</th>
                 <th>Notes</th>
             </tr>
         </thead>
@@ -123,29 +130,56 @@
             {
                 <tr>
                     <td>@check.FieldName</td>
-                    @if (check.WasSkipped)
-                    {
-                        <td class="badge bg-secondary">Skipped</td>
-                    }
-                    else if (check.Status == "Pass")
-                    {
-                        <td class="badge bg-success">Pass</td>
-                    }
-                    else if (check.Status == "Review")
-                    {
-                        <td class="badge bg-warning text-dark">Review</td>
-                    }
-                    else
-                    {
-                        <td class="badge bg-danger">Fail</td>
-                    }
-                    <td>@check.ConfidenceScore%</td>
-                    <td>@check.Notes</td>
+                    <td class="status-cell p-0">
+                        @if (check.WasSkipped)
+                        {
+                            <div class="status-skipped">Skipped</div>
+                        }
+                        else if (check.Status == "Pass")
+                        {
+                            <div class="status-pass">Pass</div>
+                        }
+                        else if (check.Status == "Review")
+                        {
+                            <div class="status-review">Review</div>
+                        }
+                        else
+                        {
+                            <div class="status-fail">Fail</div>
+                        }
+                    </td>
+                    <td class="status-cell p-0">
+                        @if (check.WasSkipped)
+                        {
+                            <div class="confidence-skipped">
+                                N/A
+                            </div>
+                        }
+                        else if (check.ConfidenceScore >= 90)
+                        {
+                            <div class="confidence-high">
+                                @check.ConfidenceScore%
+                            </div>
+                        }
+                        else if (check.ConfidenceScore >= 75)
+                        {
+                            <div class="confidence-medium">
+                                @check.ConfidenceScore%
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="confidence-low">
+                                @check.ConfidenceScore%
+                            </div>
+                        }
+                    </td>
+                    <td class="notes-column">@check.Notes</td>
                 </tr>
             }
         </tbody>
     </table>
-
+    <br />
     <h4>Extracted OCR Text</h4>
     <pre>@Model.ExtractedText</pre>
 }
