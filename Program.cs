@@ -17,6 +17,7 @@ builder.Services.AddScoped<ILabelRule, NetContentsRule>();
 builder.Services.AddScoped<ILabelRule, ClassTypeRule>();
 
 builder.Services.Configure<AzureVisionOptions>(builder.Configuration.GetSection("AzureVision"));
+builder.Services.Configure<ApplicationOptions>(builder.Configuration.GetSection("Application"));
 
 var app = builder.Build();
 
