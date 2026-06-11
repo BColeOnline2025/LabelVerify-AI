@@ -1,135 +1,75 @@
 ﻿@page
 @model IndexModel
 
-<div class="container mt-4">
+<div class="container mt-5">
 
-    <h2>Alcohol Label Verification</h2>
+    <div class="p-5 mb-4 bg-light rounded-3 border shadow-sm">
+        <div class="container-fluid py-4">
+            <h1 class="display-5 fw-bold">
+                LabelVerify AI
+            </h1>
 
-    <p class="text-muted">
-        Upload a label and compare it to application data.
-    </p>
+            <p class="col-md-10 fs-5">
+                AI-assisted alcohol label verification prototype designed to support
+                TTB compliance agents with OCR, fuzzy matching, confidence scoring,
+                batch processing, and human-in-the-loop review recommendations.
+            </p>
 
-    <form method="post" enctype="multipart/form-data">
-        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+            <hr />
 
-        <div class="mb-3">
-            <label class="form-label">Brand Name</label>
-            <input asp-for="Input.BrandName"
-                   class="form-control" />
-            <span asp-validation-for="Input.BrandName" class="text-danger"></span>
+            <p class="text-muted">
+                Built as a standalone proof-of-concept for evaluating how automation
+                can reduce routine manual verification while preserving agent judgment.
+            </p>
+
+            <a asp-page="/Single" class="btn btn-primary btn-lg me-2">
+                Start Single Label Review
+            </a>
+
+            <a asp-page="/Batch" class="btn btn-outline-primary btn-lg">
+                Open Batch Review
+            </a>
         </div>
+    </div>
 
-        <div class="mb-3">
-            <label class="form-label">Class / Type</label>
-            <input asp-for="Input.ClassType"
-                   class="form-control" />
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Alcohol Content</label>
-            <input asp-for="Input.AlcoholContent"
-                   class="form-control" />
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Net Contents</label>
-            <input asp-for="Input.NetContents"
-                   class="form-control" />
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Label Image</label>
-            <input asp-for="Input.LabelFile"
-                   type="file"
-                   class="form-control" />
-            <span asp-validation-for="Input.LabelFile" class="text-danger"></span>
-        </div>
-        
-        <button class="btn btn-primary btn-lg">
-            Verify Label
-        </button>
-
-    </form>
-
-</div>
-
-@if (Model.Result != null)
-{
-    <hr />
-
-    <h3>Verification Result</h3>
-
-    <div class="row mb-4">
+    <div class="row">
 
         <div class="col-md-4">
-            <div class="card border-success">
+            <div class="card h-100 border-primary">
                 <div class="card-body">
-                    <h5>Overall Score</h5>
-                    <h2>@Model.Result.OverallScore%</h2>
+                    <h5>Single Label Review</h5>
+                    <p>
+                        Upload one label and compare it against application data using
+                        OCR-assisted verification and confidence scoring.
+                    </p>
                 </div>
             </div>
         </div>
 
         <div class="col-md-4">
-            <div class="card border-primary">
+            <div class="card h-100 border-success">
                 <div class="card-body">
-                    <h5>Recommendation</h5>
-                    <h2>@Model.Result.Recommendation</h2>
+                    <h5>Batch Processing</h5>
+                    <p>
+                        Process multiple labels in one workflow to support large importer
+                        submissions and high-volume review periods.
+                    </p>
                 </div>
             </div>
         </div>
 
         <div class="col-md-4">
-            <div class="card border-info">
+            <div class="card h-100 border-warning">
                 <div class="card-body">
-                    <h5>Checks Run</h5>
-                    <h2>@Model.Result.Checks.Count</h2>
+                    <h5>Human Review Support</h5>
+                    <p>
+                        Uses Pass, Review, and Fail recommendations so agents retain final
+                        compliance judgment for nuanced cases.
+                    </p>
                 </div>
             </div>
         </div>
 
     </div>
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Field</th>
-                <th>Status</th>
-                <th>Confidence</th>
-                <th>Notes</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var check in Model.Result.Checks)
-            {
-                <tr>
-                    <td>@check.FieldName</td>
-                    @if (check.WasSkipped)
-                    {
-                        <td class="badge bg-secondary">Skipped</td>
-                    }
-                    else if (check.Status == "Pass")
-                    {
-                        <td class="badge bg-success">Pass</td>
-                    }
-                    else if (check.Status == "Review")
-                    {
-                        <td class="badge bg-warning text-dark">Review</td>
-                    }
-                    else
-                    {
-                        <td class="badge bg-danger">Fail</td>
-                    }
-                    <td>@check.ConfidenceScore%</td>
-                    <td>@check.Notes</td>
-                </tr>
-            }
-        </tbody>
-    </table>
 
-    <h4>Extracted OCR Text</h4>
-    <pre>@Model.ExtractedText</pre>
-}
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-}
+</div>
