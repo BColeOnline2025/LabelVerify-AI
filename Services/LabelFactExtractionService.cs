@@ -27,17 +27,17 @@ namespace LabelVerify.Web.Services
 
             var skipWords = new[]
             {
-            "government warning",
-            "contains sulfites",
-            "alc",
-            "alcohol",
-            "750",
-            "ml",
-            "bottled",
-            "produced",
-            "imported",
-            "warning"
-        };
+                "government warning",
+                "contains sulfites",
+                "alc",
+                "alcohol",
+                "750",
+                "ml",
+                "bottled",
+                "produced",
+                "imported",
+                "warning"
+            };
 
             var candidate = lines
                 .Where(line => line.Length >= 3)
@@ -53,29 +53,29 @@ namespace LabelVerify.Web.Services
         {
             var knownTypes = new[]
             {
-            "Kentucky Straight Bourbon Whiskey",
-            "Bourbon Whiskey",
-            "Straight Bourbon Whiskey",
-            "Tennessee Whiskey",
-            "Rye Whiskey",
-            "Vodka",
-            "Gin",
-            "Rum",
-            "Tequila",
-            "Cabernet Sauvignon",
-            "Merlot",
-            "Pinot Noir",
-            "Chardonnay",
-            "Sauvignon Blanc",
-            "Red Wine",
-            "White Wine",
-            "Rose Wine",
-            "American IPA",
-            "IPA",
-            "Lager",
-            "Pilsner",
-            "Stout"
-        };
+                "Kentucky Straight Bourbon Whiskey",
+                "Bourbon Whiskey",
+                "Straight Bourbon Whiskey",
+                "Tennessee Whiskey",
+                "Rye Whiskey",
+                "Vodka",
+                "Gin",
+                "Rum",
+                "Tequila",
+                "Cabernet Sauvignon",
+                "Merlot",
+                "Pinot Noir",
+                "Chardonnay",
+                "Sauvignon Blanc",
+                "Red Wine",
+                "White Wine",
+                "Rose Wine",
+                "American IPA",
+                "IPA",
+                "Lager",
+                "Pilsner",
+                "Stout"
+            };
 
             foreach (var type in knownTypes)
             {
@@ -119,36 +119,34 @@ namespace LabelVerify.Web.Services
         {
             var known = new[]
             {
-            "Napa Valley",
-            "Sonoma County",
-            "California",
-            "Willamette Valley",
-            "Columbia Valley",
-            "Paso Robles",
-            "Russian River Valley"
-        };
+                "Napa Valley",
+                "Sonoma County",
+                "California",
+                "Willamette Valley",
+                "Columbia Valley",
+                "Paso Robles",
+                "Russian River Valley"
+            };
 
-            return known.FirstOrDefault(x =>
-                text.Contains(x, StringComparison.OrdinalIgnoreCase)) ?? string.Empty;
+            return known.FirstOrDefault(x => text.Contains(x, StringComparison.OrdinalIgnoreCase)) ?? string.Empty;
         }
 
         private static string ExtractVarietal(string text)
         {
             var known = new[]
             {
-            "Cabernet Sauvignon",
-            "Merlot",
-            "Pinot Noir",
-            "Chardonnay",
-            "Sauvignon Blanc",
-            "Riesling",
-            "Zinfandel",
-            "Syrah",
-            "Malbec"
-        };
+                "Cabernet Sauvignon",
+                "Merlot",
+                "Pinot Noir",
+                "Chardonnay",
+                "Sauvignon Blanc",
+                "Riesling",
+                "Zinfandel",
+                "Syrah",
+                "Malbec"
+            };
 
-            return known.FirstOrDefault(x =>
-                text.Contains(x, StringComparison.OrdinalIgnoreCase)) ?? string.Empty;
+            return known.FirstOrDefault(x => text.Contains(x, StringComparison.OrdinalIgnoreCase)) ?? string.Empty;
         }
 
         private static string ExtractProducerStatement(string text)
@@ -157,9 +155,7 @@ namespace LabelVerify.Web.Services
                 text,
                 @"(?i)\b(bottled by|produced by|imported by|vinted by|cellared by)\s+(.+)");
 
-            return match.Success
-                ? match.Value.Trim()
-                : string.Empty;
+            return match.Success ? match.Value.Trim() : string.Empty;
         }
 
         private static string ExtractCountryOfOrigin(string text)
@@ -168,9 +164,7 @@ namespace LabelVerify.Web.Services
                 text,
                 @"(?i)\b(product of|imported from)\s+([a-zA-Z\s]+)");
 
-            return match.Success
-                ? match.Value.Trim()
-                : string.Empty;
+            return match.Success ? match.Value.Trim() : string.Empty;
         }
 
         private static string NormalizeUnit(string value)
@@ -187,11 +181,10 @@ namespace LabelVerify.Web.Services
 
         private static List<string> CleanLines(string text)
         {
-            return text
+            return [.. text
                 .Split(Environment.NewLine)
                 .Select(x => x.Trim())
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .ToList();
+                .Where(x => !string.IsNullOrWhiteSpace(x))];
         }
     }
 }

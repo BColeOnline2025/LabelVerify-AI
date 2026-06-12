@@ -2,18 +2,15 @@
 @model LabelVerify.Web.Pages.BatchModel
 
 <h2>Batch Label Review</h2>
-
 <div class="alert alert-primary shadow-sm mb-4">
     <h4 class="mb-2">
         Batch Label Processing
     </h4>
-
     <p class="mb-2">
         Upload multiple label files for automated review. This workflow
         demonstrates how large importer submissions can be processed
         more efficiently while preserving agent oversight.
     </p>
-
     <small>
         ✓ Multi-File Upload |
         ✓ Batch Dashboard |
@@ -24,32 +21,20 @@
 </div>
 
 <form method="post" enctype="multipart/form-data">
-
     <div class="mb-3">
         <label>Select Label Files</label>
-        <input asp-for="Input.LabelFiles"
-               type="file"
-               multiple
-               class="form-control" />
+        <input asp-for="Input.LabelFiles" type="file" multiple class="form-control" />
     </div>
-
-    <button class="btn btn-primary">
-        Process Batch
-    </button>
-
+    <button class="btn btn-primary">Process Batch</button>
 </form>
 
 @if (Model.Results.Any())
 {
     <br />
     <div class="d-flex justify-content-end mb-3">
-        <a asp-page="/Export"
-               class="btn btn-success">
-            Export Results (CSV)
-        </a><br />
+        <a asp-page="/Export" class="btn btn-success">Export Results (CSV)</a><br />
     </div>
     <div class="row mb-4">
-
         <div class="col-md-3">
             <div class="card border-primary">
                 <div class="card-body text-center">
@@ -58,7 +43,6 @@
                 </div>
             </div>
         </div>
-
         <div class="col-md-3">
             <div class="card border-success">
                 <div class="card-body text-center">
@@ -67,7 +51,6 @@
                 </div>
             </div>
         </div>
-
         <div class="col-md-3">
             <div class="card border-warning">
                 <div class="card-body text-center">
@@ -76,7 +59,6 @@
                 </div>
             </div>
         </div>
-
         <div class="col-md-3">
             <div class="card border-danger">
                 <div class="card-body text-center">
@@ -85,7 +67,6 @@
                 </div>
             </div>
         </div>
-
         <div class="col-md-3 mt-3">
             <div class="card border-info">
                 <div class="card-body text-center">
@@ -95,9 +76,7 @@
             </div>
         </div>
     </div>
-
     <table class="table table-striped">
-
         <thead>
             <tr>
                 <th>File</th>
@@ -106,9 +85,7 @@
                 <th>Time</th>
             </tr>
         </thead>
-
         <tbody>
-
             @foreach (var item in Model.Results)
             {
                 <tr>
@@ -118,8 +95,6 @@
                     <td>@item.ProcessingTimeMs ms</td>
                 </tr>
             }
-
         </tbody>
-
     </table>
 }

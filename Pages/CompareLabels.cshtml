@@ -2,9 +2,7 @@
 @model LabelVerify.Web.Pages.CompareLabelsModel
 
 <div class="container mt-4">
-
     <h2>Approved vs Production Label Comparison</h2>
-
     <div class="alert alert-primary shadow-sm mb-4">
         <h4>Compare Approved Label to Production Label</h4>
         <p class="mb-0">
@@ -15,35 +13,24 @@
     </div>
 
     <form method="post" enctype="multipart/form-data">
-
         <div asp-validation-summary="All" class="text-danger mb-3"></div>
-
         <div class="mb-3">
             <label class="form-label">Approved Label</label>
-            <input asp-for="Input.ApprovedLabelFile"
-                   type="file"
-                   class="form-control" />
+            <input asp-for="Input.ApprovedLabelFile" type="file" class="form-control" />
         </div>
-
         <div class="mb-3">
             <label class="form-label">Production Label</label>
-            <input asp-for="Input.ProductionLabelFile"
-                   type="file"
-                   class="form-control" />
+            <input asp-for="Input.ProductionLabelFile" type="file" class="form-control" />
         </div>
-
         <button class="btn btn-primary btn-lg">
             Compare Labels
         </button>
-
     </form>
 
     @if (Model.Result != null && Model.ApprovedFacts != null && Model.ProductionFacts != null)
     {
         <hr />
-
         <h3>Extracted Label Facts</h3>
-
         <table class="table table-bordered table-striped">
             <thead>
                 <tr>
@@ -64,9 +51,7 @@
                 <tr><td>Country of Origin</td><td>@Model.ApprovedFacts.CountryOfOrigin</td><td>@Model.ProductionFacts.CountryOfOrigin</td></tr>
             </tbody>
         </table>
-
         <h3>Verification Result</h3>
-
         <div class="row mb-4">
             <div class="col-md-3">
                 <div class="card dashboard-card border-success">
@@ -76,7 +61,6 @@
                     </div>
                 </div>
             </div>
-
             <div class="col-md-3">
                 <div class="card dashboard-card border-primary">
                     <div class="card-body text-center">
@@ -85,7 +69,6 @@
                     </div>
                 </div>
             </div>
-
             <div class="col-md-3">
                 <div class="card dashboard-card border-info">
                     <div class="card-body text-center">
@@ -94,7 +77,6 @@
                     </div>
                 </div>
             </div>
-
             <div class="col-md-3">
                 <div class="card dashboard-card border-secondary">
                     <div class="card-body text-center">
@@ -104,12 +86,10 @@
                 </div>
             </div>
         </div>
-
         <div class="alert alert-info">
             Processing Time:
             <strong>@Model.ProcessingTimeMs ms</strong>
         </div>
-
         <table class="table table-bordered table-striped" style="table-layout:fixed;">
             <thead>
                 <tr>
@@ -126,7 +106,6 @@
                 {
                     <tr>
                         <td>@check.FieldName</td>
-
                         <td class="status-cell p-0">
                             @if (check.WasSkipped)
                             {
@@ -145,10 +124,8 @@
                                 <div class="status-fail">Fail</div>
                             }
                         </td>
-
                         <td>@check.ExpectedValue</td>
                         <td>@check.ActualValue</td>
-
                         <td class="status-cell p-0">
                             @if (check.WasSkipped)
                             {
@@ -167,20 +144,16 @@
                                 <div class="confidence-low">@check.ConfidenceScore%</div>
                             }
                         </td>
-
                         <td class="notes-column">@check.Notes</td>
                     </tr>
                 }
             </tbody>
         </table>
-
         <h4>Approved Label OCR Text</h4>
         <pre class="bg-light p-3 border rounded">@Model.ApprovedLabelText</pre>
-
         <h4>Production Label OCR Text</h4>
         <pre class="bg-light p-3 border rounded">@Model.ProductionLabelText</pre>
     }
-
 </div>
 
 @section Scripts {

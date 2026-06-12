@@ -8,35 +8,21 @@ using System.Diagnostics;
 
 namespace LabelVerify.Web.Pages
 {
-    public class CompareLabelsModel : PageModel
+    public class CompareLabelsModel(IOcrService ocrService,
+        LabelFactExtractionService factExtractionService,
+        LabelComparisonService comparisonService) : PageModel
     {
-        private readonly IOcrService _ocrService;
-        private readonly LabelFactExtractionService _factExtractionService;
-        private readonly LabelComparisonService _comparisonService;
-
-        public CompareLabelsModel(
-            IOcrService ocrService,
-            LabelFactExtractionService factExtractionService,
-            LabelComparisonService comparisonService)
-        {
-            _ocrService = ocrService;
-            _factExtractionService = factExtractionService;
-            _comparisonService = comparisonService;
-        }
+        private readonly IOcrService _ocrService = ocrService;
+        private readonly LabelFactExtractionService _factExtractionService = factExtractionService;
+        private readonly LabelComparisonService _comparisonService = comparisonService;
 
         [BindProperty]
         public LabelComparisonUploadViewModel Input { get; set; } = new();
-
         public string? ApprovedLabelText { get; set; }
-
         public string? ProductionLabelText { get; set; }
-
         public LabelFacts? ApprovedFacts { get; set; }
-
         public LabelFacts? ProductionFacts { get; set; }
-
         public VerificationResult? Result { get; set; }
-
         public long ProcessingTimeMs { get; set; }
 
         public void OnGet()

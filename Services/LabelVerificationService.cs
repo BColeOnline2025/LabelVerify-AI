@@ -3,18 +3,11 @@ using LabelVerify.Web.Rules;
 
 namespace LabelVerify.Web.Services
 {
-    public class LabelVerificationService
+    public class LabelVerificationService(IEnumerable<ILabelRule> rules)
     {
-        private readonly IEnumerable<ILabelRule> _rules;
+        private readonly IEnumerable<ILabelRule> _rules = rules;
 
-        public LabelVerificationService(IEnumerable<ILabelRule> rules)
-        {
-            _rules = rules;
-        }
-
-        public VerificationResult Verify(
-            LabelApplication application,
-            string extractedText)
+        public VerificationResult Verify(LabelApplication application, string extractedText)
         {
             var checks = _rules
                 .Select(rule => rule.Evaluate(application, extractedText))
@@ -24,7 +17,7 @@ namespace LabelVerify.Web.Services
                 .Where(check => !check.WasSkipped)
                 .ToList();
 
-            var overallScore = scoredChecks.Any()
+            var overallScore = scoredChecks.Count != 0
                 ? (int)Math.Round(scoredChecks.Average(check => check.ConfidenceScore))
                 : 0;
 
@@ -34,11 +27,7 @@ namespace LabelVerify.Web.Services
             var hasReview = scoredChecks.Any(check =>
                 string.Equals(check.Status, "Review", StringComparison.OrdinalIgnoreCase));
 
-            var recommendation = hasFail
-                ? "Reject"
-                : hasReview
-                    ? "Review"
-                    : "Approve";
+            var recommendation = hasFail ? "Reject" : hasReview ? "Review" : "Approve";
 
             return new VerificationResult
             {

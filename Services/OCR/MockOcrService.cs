@@ -9,17 +9,17 @@ namespace LabelVerify.Web.Services.OCR
         {
             return Task.FromResult(
                 """
-            OLD TOM DISTILLERY
+                    OLD TOM DISTILLERY
 
-            Kentucky Straight Bourbon Whiskey
+                    Kentucky Straight Bourbon Whiskey
 
-            45% Alc./Vol. (90 Proof)
+                    45% Alc./Vol. (90 Proof)
 
-            750 mL
+                    750 mL
 
-            GOVERNMENT WARNING:
-            (1) According to the Surgeon General...
-            """);
+                    GOVERNMENT WARNING:
+                    (1) According to the Surgeon General...
+                """);
         }
     }
 }

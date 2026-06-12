@@ -47,8 +47,7 @@ namespace LabelVerify.Web.Services
                 return string.Empty;
             }
 
-            var pattern =
-                $@"(?im)^\s*{Regex.Escape(fieldLabel)}.*?$[\r\n]+^\s*(.+?)\s*$";
+            var pattern = $@"(?im)^\s*{Regex.Escape(fieldLabel)}.*?$[\r\n]+^\s*(.+?)\s*$";
 
             var match = Regex.Match(text, pattern);
 
@@ -59,9 +58,7 @@ namespace LabelVerify.Web.Services
 
             var value = CleanValue(match.Groups[1].Value);
 
-            return IsLikelyFieldHeader(value)
-                ? string.Empty
-                : value;
+            return IsLikelyFieldHeader(value) ? string.Empty : value;
         }
 
         private static string ExtractProductType(string text)
@@ -86,19 +83,19 @@ namespace LabelVerify.Web.Services
                     .ToList();
 
                 if (window.Any(x => x.Contains('✓') &&
-                                    x.Contains("DISTILLED SPIRITS", StringComparison.OrdinalIgnoreCase)))
+                    x.Contains("DISTILLED SPIRITS", StringComparison.OrdinalIgnoreCase)))
                 {
                     return "Distilled Spirits";
                 }
 
                 if (window.Any(x => x.Contains('✓') &&
-                                    x.Contains("WINE", StringComparison.OrdinalIgnoreCase)))
+                    x.Contains("WINE", StringComparison.OrdinalIgnoreCase)))
                 {
                     return "Wine";
                 }
 
                 if (window.Any(x => x.Contains('✓') &&
-                                    x.Contains("MALT BEVERAGES", StringComparison.OrdinalIgnoreCase)))
+                    x.Contains("MALT BEVERAGES", StringComparison.OrdinalIgnoreCase)))
                 {
                     return "Malt Beverages";
                 }
@@ -160,30 +157,30 @@ namespace LabelVerify.Web.Services
 
             var knownTypes = new[]
             {
-            "Kentucky Straight Bourbon Whiskey",
-            "Straight Bourbon Whiskey",
-            "Bourbon Whiskey",
-            "Straight Rye Whiskey",
-            "Rye Whiskey",
-            "Tennessee Whiskey",
-            "Vodka",
-            "Gin",
-            "Rum",
-            "Tequila",
-            "Cabernet Sauvignon",
-            "Merlot",
-            "Pinot Noir",
-            "Chardonnay",
-            "Sauvignon Blanc",
-            "Red Wine",
-            "White Wine",
-            "Rose Wine",
-            "American IPA",
-            "IPA",
-            "Lager",
-            "Pilsner",
-            "Stout"
-        };
+                "Kentucky Straight Bourbon Whiskey",
+                "Straight Bourbon Whiskey",
+                "Bourbon Whiskey",
+                "Straight Rye Whiskey",
+                "Rye Whiskey",
+                "Tennessee Whiskey",
+                "Vodka",
+                "Gin",
+                "Rum",
+                "Tequila",
+                "Cabernet Sauvignon",
+                "Merlot",
+                "Pinot Noir",
+                "Chardonnay",
+                "Sauvignon Blanc",
+                "Red Wine",
+                "White Wine",
+                "Rose Wine",
+                "American IPA",
+                "IPA",
+                "Lager",
+                "Pilsner",
+                "Stout"
+            };
 
             foreach (var type in knownTypes)
             {
@@ -343,19 +340,18 @@ namespace LabelVerify.Web.Services
         {
             var headers = new[]
             {
-            "required",
-            "formula",
-            "fanciful name",
-            "brand name",
-            "grape varietal",
-            "wine appellation",
-            "type of application",
-            "phone number",
-            "email address"
-        };
+                "required",
+                "formula",
+                "fanciful name",
+                "brand name",
+                "grape varietal",
+                "wine appellation",
+                "type of application",
+                "phone number",
+                "email address"
+            };
 
-            return headers.Any(x =>
-                value.Contains(x, StringComparison.OrdinalIgnoreCase));
+            return headers.Any(x => value.Contains(x, StringComparison.OrdinalIgnoreCase));
         }
 
         private static string CleanValue(string value)

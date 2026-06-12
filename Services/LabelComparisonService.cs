@@ -24,7 +24,7 @@ namespace LabelVerify.Web.Services
                 .Where(x => !x.WasSkipped)
                 .ToList();
 
-            var overallScore = scoredChecks.Any()
+            var overallScore = scoredChecks.Count != 0
                 ? (int)Math.Round(scoredChecks.Average(x => x.ConfidenceScore))
                 : 0;
 
@@ -32,10 +32,7 @@ namespace LabelVerify.Web.Services
             var hasReview = scoredChecks.Any(x => x.Status == "Review");
 
             var recommendation = hasFail
-                ? "Reject"
-                : hasReview
-                    ? "Review"
-                    : "Approve";
+                ? "Reject" : hasReview ? "Review" : "Approve";
 
             return new VerificationResult
             {
@@ -45,19 +42,14 @@ namespace LabelVerify.Web.Services
             };
         }
 
-        private static FieldCheckResult CompareExact(
-            string fieldName,
-            string approved,
-            string production)
+        private static FieldCheckResult CompareExact(string fieldName, string approved, string production)
         {
-            if (string.IsNullOrWhiteSpace(approved) &&
-                string.IsNullOrWhiteSpace(production))
+            if (string.IsNullOrWhiteSpace(approved) && string.IsNullOrWhiteSpace(production))
             {
                 return Skipped(fieldName, "Field not detected on either label.");
             }
 
-            if (string.IsNullOrWhiteSpace(approved) ||
-                string.IsNullOrWhiteSpace(production))
+            if (string.IsNullOrWhiteSpace(approved) || string.IsNullOrWhiteSpace(production))
             {
                 return new FieldCheckResult
                 {
@@ -89,10 +81,7 @@ namespace LabelVerify.Web.Services
             };
         }
 
-        private static FieldCheckResult ComparePresence(
-            string fieldName,
-            string approved,
-            string production)
+        private static FieldCheckResult ComparePresence(string fieldName, string approved, string production)
         {
             var approvedPresent = !string.IsNullOrWhiteSpace(approved);
             var productionPresent = !string.IsNullOrWhiteSpace(production);
@@ -140,23 +129,17 @@ namespace LabelVerify.Web.Services
             };
         }
 
-        private static FieldCheckResult CompareFuzzy(
-            string fieldName,
-            string approved,
-            string production,
-            int passThreshold,
-            bool allowSkip = false)
+        private static FieldCheckResult CompareFuzzy(string fieldName, string approved, string production,
+            int passThreshold, bool allowSkip = false)
         {
-            if (string.IsNullOrWhiteSpace(approved) &&
-                string.IsNullOrWhiteSpace(production))
+            if (string.IsNullOrWhiteSpace(approved) && string.IsNullOrWhiteSpace(production))
             {
                 return allowSkip
                     ? Skipped(fieldName, "Field not detected on either label.")
                     : ReviewMissing(fieldName, approved, production);
             }
 
-            if (string.IsNullOrWhiteSpace(approved) ||
-                string.IsNullOrWhiteSpace(production))
+            if (string.IsNullOrWhiteSpace(approved) || string.IsNullOrWhiteSpace(production))
             {
                 return ReviewMissing(fieldName, approved, production);
             }
@@ -205,10 +188,7 @@ namespace LabelVerify.Web.Services
             };
         }
 
-        private static FieldCheckResult ReviewMissing(
-            string fieldName,
-            string approved,
-            string production)
+        private static FieldCheckResult ReviewMissing(string fieldName, string approved, string production)
         {
             return new FieldCheckResult
             {

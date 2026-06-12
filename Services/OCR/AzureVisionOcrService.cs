@@ -6,33 +6,22 @@ using Microsoft.Extensions.Options;
 
 namespace LabelVerify.Web.Services.OCR
 {
-    public class AzureVisionOcrService : IOcrService
+    public class AzureVisionOcrService(IOptions<AzureVisionOptions> options) : IOcrService
     {
-        private readonly AzureVisionOptions _options;
-
-        public AzureVisionOcrService(IOptions<AzureVisionOptions> options)
-        {
-            _options = options.Value;
-        }
+        private readonly AzureVisionOptions _options = options.Value;
 
         public async Task<string> ExtractTextAsync(Stream imageStream)
         {
-            if (string.IsNullOrWhiteSpace(_options.Endpoint) ||
-                string.IsNullOrWhiteSpace(_options.ApiKey))
+            if (string.IsNullOrWhiteSpace(_options.Endpoint) || string.IsNullOrWhiteSpace(_options.ApiKey))
             {
-                throw new InvalidOperationException(
-                    "Azure Vision OCR is not configured. Endpoint and ApiKey are required.");
+                throw new InvalidOperationException("Azure Vision OCR is not configured. Endpoint and ApiKey are required.");
             }
 
-            var client = new ImageAnalysisClient(
-                new Uri(_options.Endpoint),
-                new AzureKeyCredential(_options.ApiKey));
+            var client = new ImageAnalysisClient(new Uri(_options.Endpoint), new AzureKeyCredential(_options.ApiKey));
 
             var imageData = BinaryData.FromStream(imageStream);
 
-            var result = await client.AnalyzeAsync(
-                imageData,
-                VisualFeatures.Read);
+            var result = await client.AnalyzeAsync(imageData, VisualFeatures.Read);
 
             var lines = result.Value.Read?.Blocks?
                 .SelectMany(block => block.Lines)

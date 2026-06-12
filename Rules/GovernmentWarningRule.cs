@@ -4,14 +4,9 @@ namespace LabelVerify.Web.Rules
 {
     public class GovernmentWarningRule : ILabelRule
     {
-        public FieldCheckResult Evaluate(
-            LabelApplication application,
-            string extractedText)
+        public FieldCheckResult Evaluate(LabelApplication application, string extractedText)
         {
-            bool found =
-                extractedText.Contains(
-                    "GOVERNMENT WARNING:",
-                    StringComparison.OrdinalIgnoreCase);
+            bool found = extractedText.Contains("GOVERNMENT WARNING:", StringComparison.OrdinalIgnoreCase);
 
             return new FieldCheckResult
             {

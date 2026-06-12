@@ -2,20 +2,16 @@
 @model LabelVerify.Web.Pages.SingleModel
 
 <div class="container mt-4">
-
     <h2>Alcohol Label Verification</h2>
-
     <div class="alert alert-primary shadow-sm mb-4">
         <h4 class="mb-2">
             TTB AI-Assisted Label Verification Prototype
         </h4>
-
         <p class="mb-2">
             This proof-of-concept demonstrates automated alcohol label
             verification using OCR, fuzzy matching, confidence scoring,
             and compliance rule validation to support label review workflows.
         </p>
-
         <small>
             ✓ Single Label Verification |
             ✓ Fuzzy Brand Matching |
@@ -24,61 +20,43 @@
             ✓ Performance Metrics
         </small>
     </div>
-
     <p class="text-muted">
         Upload a label and compare it to application data.
     </p>
-
     <form method="post" enctype="multipart/form-data">
         <div asp-validation-summary="All" class="text-danger mb-3"></div>
-
         <div class="mb-3">
             <label class="form-label">Brand Name</label>
-            <input asp-for="Input.BrandName"
-                   class="form-control" />
+            <input asp-for="Input.BrandName" class="form-control" />
             <span asp-validation-for="Input.BrandName" class="text-danger"></span>
         </div>
-
         <div class="mb-3">
             <label class="form-label">Class / Type</label>
-            <input asp-for="Input.ClassType"
-                   class="form-control" />
+            <input asp-for="Input.ClassType" class="form-control" />
         </div>
-
         <div class="mb-3">
             <label class="form-label">Alcohol Content</label>
-            <input asp-for="Input.AlcoholContent"
-                   class="form-control" />
+            <input asp-for="Input.AlcoholContent" class="form-control" />
         </div>
-
         <div class="mb-3">
             <label class="form-label">Net Contents</label>
-            <input asp-for="Input.NetContents"
-                   class="form-control" />
+            <input asp-for="Input.NetContents" class="form-control" />
         </div>
-
         <div class="mb-3">
             <label class="form-label">Label Image</label>
-            <input asp-for="Input.LabelFile"
-                   type="file"
-                   class="form-control" />
+            <input asp-for="Input.LabelFile" type="file" class="form-control" />
             <span asp-validation-for="Input.LabelFile" class="text-danger"></span>
         </div>
-
         <button class="btn btn-primary btn-lg">
             Verify Label
         </button>
-
     </form>
-
 </div>
 
 @if (Model.Result != null)
 {
     <hr />
-
     <h3>Verification Result</h3>
-
     <div class="row mb-4">
         <div class="col-md-3">
             <div class="card dashboard-card border-success">
@@ -88,7 +66,6 @@
                 </div>
             </div>
         </div>
-
         <div class="col-md-3">
             <div class="card dashboard-card border-primary">
                 <div class="card-body text-center">
@@ -97,7 +74,6 @@
                 </div>
             </div>
         </div>
-
         <div class="col-md-3">
             <div class="card dashboard-card border-info">
                 <div class="card-body text-center">
@@ -106,7 +82,6 @@
                 </div>
             </div>
         </div>
-
         <div class="col-md-3">
             <div class="card dashboard-card border-secondary">
                 <div class="card-body text-center">

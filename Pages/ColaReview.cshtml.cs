@@ -8,8 +8,7 @@ using System.Diagnostics;
 
 namespace LabelVerify.Web.Pages
 {
-    public class ColaReviewModel(
-        IColaPackageIngestionService colaPackageIngestionService,
+    public class ColaReviewModel(IColaPackageIngestionService colaPackageIngestionService,
         IOcrService ocrService) : PageModel
     {
         private readonly IColaPackageIngestionService _colaPackageIngestionService = colaPackageIngestionService;
@@ -17,13 +16,9 @@ namespace LabelVerify.Web.Pages
 
         [BindProperty]
         public ColaReviewUploadViewModel Input { get; set; } = new();
-
         public ApprovedProductProfile? ApprovedProfile { get; set; }
-
         public string? PackageOcrText { get; set; }
-
         public string? ProductionLabelOcrText { get; set; }
-
         public long ProcessingTimeMs { get; set; }
 
         public void OnGet()
@@ -48,7 +43,6 @@ namespace LabelVerify.Web.Pages
                 var result = await _colaPackageIngestionService.ExtractPackageAsync(packageStream);
 
                 ApprovedProfile = result.Profile;
-
                 PackageOcrText = result.RawOcrText;
 
                 if (string.IsNullOrWhiteSpace(PackageOcrText))

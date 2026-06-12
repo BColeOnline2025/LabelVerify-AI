@@ -5,9 +5,7 @@ namespace LabelVerify.Web.Rules
 {
     public class AlcoholContentRule : ILabelRule
     {
-        public FieldCheckResult Evaluate(
-            LabelApplication application,
-            string extractedText)
+        public FieldCheckResult Evaluate(LabelApplication application, string extractedText)
         {
             if (string.IsNullOrWhiteSpace(application.AlcoholContent))
             {
@@ -53,14 +51,9 @@ namespace LabelVerify.Web.Rules
                 return null;
             }
 
-            var match = Regex.Match(
-                value,
-                @"\b\d{1,2}(\.\d+)?\s*%",
-                RegexOptions.IgnoreCase);
+            var match = Regex.Match(value, @"\b\d{1,2}(\.\d+)?\s*%", RegexOptions.IgnoreCase);
 
-            return match.Success
-                ? match.Value.Replace(" ", "")
-                : null;
+            return match.Success ? match.Value.Replace(" ", "") : null;
         }
     }
 }

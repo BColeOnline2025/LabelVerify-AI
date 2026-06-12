@@ -8,45 +8,23 @@ using System.Diagnostics;
 
 namespace LabelVerify.Web.Pages
 {
-    public class BatchModel : PageModel
+    public class BatchModel(IOcrService ocrService, LabelVerificationService verificationService) : PageModel
     {
-        private readonly IOcrService _ocrService;
-        private readonly LabelVerificationService _verificationService;
-
-        public BatchModel(
-            IOcrService ocrService,
-            LabelVerificationService verificationService)
-        {
-            _ocrService = ocrService;
-            _verificationService = verificationService;
-        }
+        private readonly IOcrService _ocrService = ocrService;
+        private readonly LabelVerificationService _verificationService = verificationService;
 
         [BindProperty]
         public BatchUploadViewModel Input { get; set; } = new();
-
         public List<BatchResult> Results { get; set; } = [];
-
         public int TotalFiles => Results.Count;
-
-        public int ApprovedCount =>
-            Results.Count(x =>
-                x.Recommendation.Contains("Approve",
-                    StringComparison.OrdinalIgnoreCase));
-
-        public int ReviewCount =>
-            Results.Count(x =>
-                x.Recommendation.Contains("Review",
-                    StringComparison.OrdinalIgnoreCase));
-
-        public int RejectCount =>
-            Results.Count(x =>
-                x.Recommendation.Contains("Reject",
-                    StringComparison.OrdinalIgnoreCase));
-
-        public double AverageProcessingTime =>
-            Results.Any()
-                ? Results.Average(x => x.ProcessingTimeMs)
-                : 0;
+        public int ApprovedCount => Results.Count(x => x.Recommendation.Contains("Approve",
+            StringComparison.OrdinalIgnoreCase));
+        public int ReviewCount => Results.Count(x => x.Recommendation.Contains("Review",
+            StringComparison.OrdinalIgnoreCase));
+        public int RejectCount => Results.Count(x => x.Recommendation.Contains("Reject",
+            StringComparison.OrdinalIgnoreCase));
+        public double AverageProcessingTime => Results.Count != 0
+                ? Results.Average(x => x.ProcessingTimeMs) : 0;
         
         public void OnGet()
         {
@@ -54,11 +32,9 @@ namespace LabelVerify.Web.Pages
 
         public async Task<IActionResult> OnPostAsync()
         {
-            if (Input.LabelFiles == null || !Input.LabelFiles.Any())
+            if (Input.LabelFiles == null || Input.LabelFiles.Count == 0)
             {
-                ModelState.AddModelError(
-                    string.Empty,
-                    "Please select one or more label files.");
+                ModelState.AddModelError(string.Empty, "Please select one or more label files.");
 
                 return Page();
             }
@@ -69,16 +45,13 @@ namespace LabelVerify.Web.Pages
                 {
                     var sw = Stopwatch.StartNew();
 
-                    await using var stream =
-                        file.OpenReadStream();
+                    await using var stream = file.OpenReadStream();
 
-                    var extractedText =
-                        await _ocrService.ExtractTextAsync(stream);
+                    var extractedText = await _ocrService.ExtractTextAsync(stream);
 
                     sw.Stop();
 
-                    var application =
-                        new LabelApplication
+                    var application = new LabelApplication
                         {
                             BrandName = string.Empty,
                             ClassType = string.Empty,
@@ -87,25 +60,16 @@ namespace LabelVerify.Web.Pages
                             GovernmentWarning = string.Empty
                         };
 
-                    var verificationResult =
-                        _verificationService.Verify(
-                            application,
-                            extractedText);
+                    var verificationResult = _verificationService.Verify(application, extractedText);
 
                     Results.Add(
                         new BatchResult
                         {
                             FileName = file.FileName,
-                            Recommendation =
-                                verificationResult.Recommendation,
-                            Status =
-                                verificationResult.Passed
-                                    ? "Pass"
-                                    : "Review",
-                            Score =
-                                verificationResult.OverallScore,
-                            ProcessingTimeMs =
-                                sw.ElapsedMilliseconds
+                            Recommendation = verificationResult.Recommendation,
+                            Status = verificationResult.Passed ? "Pass" : "Review",
+                            Score = verificationResult.OverallScore,
+                            ProcessingTimeMs = sw.ElapsedMilliseconds
                         });
                 }
                 catch (Exception ex)
@@ -119,9 +83,7 @@ namespace LabelVerify.Web.Pages
                             ProcessingTimeMs = 0
                         });
 
-                    ModelState.AddModelError(
-                        string.Empty,
-                        $"Error processing {file.FileName}: {ex.Message}");
+                    ModelState.AddModelError(string.Empty, $"Error processing {file.FileName} : {ex.Message}");
                 }
             }
 

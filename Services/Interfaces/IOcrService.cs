@@ -2,7 +2,6 @@
 {
     public interface IOcrService
     {
-        Task<string> ExtractTextAsync(
-            Stream imageStream);
+        Task<string> ExtractTextAsync(Stream imageStream);
     }
 }

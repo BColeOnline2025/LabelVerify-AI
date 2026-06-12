@@ -4,8 +4,6 @@ namespace LabelVerify.Web.Rules
 {
     public interface ILabelRule
     {
-        FieldCheckResult Evaluate(
-            LabelApplication application,
-            string extractedText);
+        FieldCheckResult Evaluate(LabelApplication application, string extractedText);
     }
 }

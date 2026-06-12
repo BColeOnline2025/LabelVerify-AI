@@ -7,21 +7,19 @@ namespace LabelVerify.Web.Rules
     {
         private static readonly HashSet<string> GenericClassTypes =
             new(StringComparer.OrdinalIgnoreCase)
-            {
-            "Wine",
-            "Beer",
-            "Ale",
-            "Lager",
-            "Spirits",
-            "Distilled Spirits",
-            "Whiskey",
-            "Whisky",
-            "Liquor"
-            };
+                {
+                    "Wine",
+                    "Beer",
+                    "Ale",
+                    "Lager",
+                    "Spirits",
+                    "Distilled Spirits",
+                    "Whiskey",
+                    "Whisky",
+                    "Liquor"
+                };
 
-        public FieldCheckResult Evaluate(
-            LabelApplication application,
-            string extractedText)
+        public FieldCheckResult Evaluate(LabelApplication application, string extractedText)
         {
             if (string.IsNullOrWhiteSpace(application.ClassType))
             {

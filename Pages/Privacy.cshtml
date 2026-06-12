@@ -5,9 +5,7 @@
 }
 
 <div class="container mt-4">
-
     <h2>Privacy and Prototype Data Handling</h2>
-
     <div class="alert alert-primary shadow-sm mb-4">
         <h4>LabelVerify AI Prototype</h4>
         <p class="mb-0">
@@ -15,28 +13,24 @@
             within this proof-of-concept application.
         </p>
     </div>
-
     <h4>Prototype Scope</h4>
     <p>
         LabelVerify AI is a demonstration prototype created to evaluate AI-assisted
         alcohol label verification workflows. It is not a production TTB system and
         is not connected to the COLA application system.
     </p>
-
     <h4>Uploaded Label Files</h4>
     <p>
         Label files uploaded through the Single Review or Batch Review workflows are
         processed only for verification during the active request. The prototype does
         not intentionally retain uploaded label files after processing.
     </p>
-
     <h4>Application Data</h4>
     <p>
         Application fields such as brand name, class/type, alcohol content, net contents,
         and government warning text are used only to compare against extracted label text.
         These values are not intentionally stored in a database by this prototype.
     </p>
-
     <h4>OCR and AI Processing</h4>
     <p>
         The application uses an OCR service abstraction to extract text from label images.
@@ -44,21 +38,18 @@
         Azure-enabled implementation, OCR may be performed using Azure AI Vision or another
         approved OCR provider.
     </p>
-
     <h4>Human Review</h4>
     <p>
         This application provides decision-support output only. Results such as Pass,
         Review, or Fail are intended to assist compliance agents and do not represent
         final regulatory determinations.
     </p>
-
     <h4>Security Considerations</h4>
     <p>
         A production implementation would require additional controls, including
         authentication, authorization, audit logging, retention policies, encryption,
         and compliance review for federal information security requirements.
     </p>
-
     <h4>Prototype Limitations</h4>
     <ul>
         <li>No production COLA integration is included.</li>
@@ -67,10 +58,8 @@
         <li>Uploaded files are used only for prototype processing.</li>
         <li>OCR accuracy depends on image quality and OCR provider capabilities.</li>
     </ul>
-
     <h4>Contact</h4>
     <p>
         This prototype was developed for technical evaluation purposes.
     </p>
-
 </div>

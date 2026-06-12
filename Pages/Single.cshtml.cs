@@ -7,24 +7,14 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace LabelVerify.Web.Pages
 {
-    public class SingleModel : PageModel
+    public class SingleModel(IOcrService ocrService, LabelVerificationService verificationService) : PageModel
     {
-        private readonly IOcrService _ocrService;
-        private readonly LabelVerificationService _verificationService;
-
-        public SingleModel(
-            IOcrService ocrService,
-            LabelVerificationService verificationService)
-        {
-            _ocrService = ocrService;
-            _verificationService = verificationService;
-        }
+        private readonly IOcrService _ocrService = ocrService;
+        private readonly LabelVerificationService _verificationService = verificationService;
 
         [BindProperty]
         public UploadLabelViewModel Input { get; set; } = new();
-
         public VerificationResult? Result { get; set; }
-
         public string? ExtractedText { get; set; }
 
         public void OnGet()

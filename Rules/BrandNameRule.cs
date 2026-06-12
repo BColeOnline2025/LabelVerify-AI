@@ -5,9 +5,7 @@ namespace LabelVerify.Web.Rules
 {
     public class BrandNameRule : ILabelRule
     {
-        public FieldCheckResult Evaluate(
-            LabelApplication application,
-            string extractedText)
+        public FieldCheckResult Evaluate(LabelApplication application, string extractedText)
         {
             if (string.IsNullOrWhiteSpace(application.BrandName))
             {
@@ -26,9 +24,7 @@ namespace LabelVerify.Web.Rules
             var expected = Normalize(application.BrandName);
             var actualText = Normalize(extractedText);
 
-            var score = Math.Max(
-               Fuzz.PartialRatio(expected, actualText),
-               Fuzz.TokenSetRatio(expected, actualText));
+            var score = Math.Max(Fuzz.PartialRatio(expected, actualText), Fuzz.TokenSetRatio(expected, actualText));
 
             var status = score switch
             {

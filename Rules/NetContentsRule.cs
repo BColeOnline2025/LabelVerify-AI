@@ -5,8 +5,7 @@ namespace LabelVerify.Web.Rules
 {
     public class NetContentsRule : ILabelRule
     {
-        public FieldCheckResult Evaluate(
-            LabelApplication application, string extractedText)
+        public FieldCheckResult Evaluate(LabelApplication application, string extractedText)
         {
             if (string.IsNullOrWhiteSpace(application.NetContents))
             {
