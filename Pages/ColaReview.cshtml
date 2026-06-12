@@ -1,0 +1,196 @@
+﻿@page
+@model LabelVerify.Web.Pages.ColaReviewModel
+
+<div class="container mt-4">
+
+    <h2>COLA Package Review</h2>
+
+    <div class="alert alert-primary shadow-sm mb-4">
+        <h4 class="mb-2">
+            Approved COLA Package Extraction
+        </h4>
+
+        <p class="mb-2">
+            Upload a COLA package PDF to extract the approved product profile
+            from the application and embedded label artwork.
+        </p>
+
+        <small>
+            ✓ PDF Upload |
+            ✓ OCR Extraction |
+            ✓ Approved Product Profile |
+            ✓ Raw OCR Review |
+            ✓ Future Production Label Comparison
+        </small>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+        <div class="mb-3">
+            <label class="form-label">Approved COLA Package PDF</label>
+            <input asp-for="Input.ColaPackagePdf"
+                   type="file"
+                   accept=".pdf,image/*"
+                   class="form-control" />
+            <span asp-validation-for="Input.ColaPackagePdf"
+                  class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Production Label Image</label>
+            <input asp-for="Input.ProductionLabelImage"
+                   type="file"
+                   accept="image/*,.pdf"
+                   class="form-control" />
+            <div class="form-text">
+                Optional for this first version. The next iteration will compare this label against the approved profile.
+            </div>
+        </div>
+
+        <button class="btn btn-primary btn-lg">
+            Extract Approved Profile
+        </button>
+
+    </form>
+
+    @if (Model.ApprovedProfile != null)
+    {
+        <hr />
+
+        <h3>Approved Product Profile</h3>
+
+        <div class="row mb-4">
+
+            <div class="col-md-3">
+                <div class="card dashboard-card border-primary">
+                    <div class="card-body text-center">
+                        <h6>Brand Name</h6>
+                        <h5>@DisplayValue(Model.ApprovedProfile.BrandName)</h5>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card dashboard-card border-info">
+                    <div class="card-body text-center">
+                        <h6>Product Type</h6>
+                        <h5>@DisplayValue(Model.ApprovedProfile.ProductType)</h5>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card dashboard-card border-success">
+                    <div class="card-body text-center">
+                        <h6>Alcohol Content</h6>
+                        <h5>@DisplayValue(Model.ApprovedProfile.AlcoholContent)</h5>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card dashboard-card border-secondary">
+                    <div class="card-body text-center">
+                        <h6>Net Contents</h6>
+                        <h5>@DisplayValue(Model.ApprovedProfile.NetContents)</h5>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th style="width:260px;">Field</th>
+                    <th>Extracted Value</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <tr>
+                    <td>Brand Name</td>
+                    <td>@DisplayValue(Model.ApprovedProfile.BrandName)</td>
+                </tr>
+                <tr>
+                    <td>Fanciful Name</td>
+                    <td>@DisplayValue(Model.ApprovedProfile.FancifulName)</td>
+                </tr>
+                <tr>
+                    <td>Product Type</td>
+                    <td>@DisplayValue(Model.ApprovedProfile.ProductType)</td>
+                </tr>
+                <tr>
+                    <td>Class / Type</td>
+                    <td>@DisplayValue(Model.ApprovedProfile.ClassType)</td>
+                </tr>
+                <tr>
+                    <td>Alcohol Content</td>
+                    <td>@DisplayValue(Model.ApprovedProfile.AlcoholContent)</td>
+                </tr>
+                <tr>
+                    <td>Net Contents</td>
+                    <td>@DisplayValue(Model.ApprovedProfile.NetContents)</td>
+                </tr>
+                <tr>
+                    <td>Government Warning</td>
+                    <td>@DisplayValue(Model.ApprovedProfile.GovernmentWarning)</td>
+                </tr>
+                <tr>
+                    <td>Sulfites Statement</td>
+                    <td>@DisplayValue(Model.ApprovedProfile.SulfitesStatement)</td>
+                </tr>
+                <tr>
+                    <td>Producer Statement</td>
+                    <td>@DisplayValue(Model.ApprovedProfile.ProducerStatement)</td>
+                </tr>
+                <tr>
+                    <td>Country of Origin</td>
+                    <td>@DisplayValue(Model.ApprovedProfile.CountryOfOrigin)</td>
+                </tr>
+                <tr>
+                    <td>Formula Number</td>
+                    <td>@DisplayValue(Model.ApprovedProfile.FormulaNumber)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        @if (Model.ProcessingTimeMs > 0)
+        {
+            <div class="alert alert-info">
+                Package Processing Time:
+                <strong>@Model.ProcessingTimeMs ms</strong>
+
+                @if (Model.ProcessingTimeMs <= 5000)
+                {
+                    <span class="badge bg-success ms-2">Under 5 sec</span>
+                }
+                else
+                {
+                    <span class="badge bg-warning text-dark ms-2">Over 5 sec</span>
+                }
+            </div>
+        }
+
+        <h4>Raw COLA Package OCR Text</h4>
+
+        <pre class="bg-light p-3 border rounded"
+             style="white-space: pre-wrap;">@Model.PackageOcrText</pre>
+    }
+
+</div>
+
+@functions {
+    private static string DisplayValue(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? "Not detected"
+            : value;
+    }
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -3,38 +3,37 @@
 
 <div class="container mt-5">
 
-    <div class="p-5 mb-4 bg-light rounded-3 border shadow-sm">
-        <div class="container-fluid py-4">
-            <h1 class="display-5 fw-bold">
-                LabelVerify AI
-            </h1>
-
-            <p class="col-md-10 fs-5">
+    <div class="p-2 mb-4 bg-light rounded-3 border shadow-sm">
+        <div class="container-fluid py-1">
+            <h1 class="display-5 fw-bold">LabelVerify AI</h1>
+            <p class="fs-5">
                 AI-assisted alcohol label verification prototype designed to support
                 TTB compliance agents with OCR, fuzzy matching, confidence scoring,
                 batch processing, and human-in-the-loop review recommendations.
             </p>
-
             <hr />
-
             <p class="text-muted">
                 Built as a standalone proof-of-concept for evaluating how automation
                 can reduce routine manual verification while preserving agent judgment.
             </p>
-
-            <a asp-page="/Single" class="btn btn-primary btn-lg me-2">
-                Start Single Label Review
-            </a>
-
-            <a asp-page="/Batch" class="btn btn-outline-primary btn-lg">
-                Open Batch Review
-            </a>
+            <a asp-page="/CompareLabels" class="btn btn-outline-primary btn-lg">Compare Labels</a>
+            <a asp-page="/Single" class="btn btn-outline-primary btn-lg">Single Label Review</a>
+            <a asp-page="/Batch" class="btn btn-outline-primary btn-lg">Batch Review</a>
         </div>
     </div>
-
     <div class="row">
-
-        <div class="col-md-4">
+        <div class="col-md-3">
+            <div class="card h-100 border-info">
+                <div class="card-body">
+                    <h5>Approved vs Production Label</h5>
+                    <p>
+                        Compare approved COLA label artwork against a production label image
+                        to identify discrepancies in required label facts.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
             <div class="card h-100 border-primary">
                 <div class="card-body">
                     <h5>Single Label Review</h5>
@@ -45,8 +44,7 @@
                 </div>
             </div>
         </div>
-
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card h-100 border-success">
                 <div class="card-body">
                     <h5>Batch Processing</h5>
@@ -57,8 +55,7 @@
                 </div>
             </div>
         </div>
-
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card h-100 border-warning">
                 <div class="card-body">
                     <h5>Human Review Support</h5>
@@ -69,7 +66,5 @@
                 </div>
             </div>
         </div>
-
     </div>
-
 </div>

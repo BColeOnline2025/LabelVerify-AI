@@ -1,0 +1,188 @@
+﻿@page
+@model LabelVerify.Web.Pages.CompareLabelsModel
+
+<div class="container mt-4">
+
+    <h2>Approved vs Production Label Comparison</h2>
+
+    <div class="alert alert-primary shadow-sm mb-4">
+        <h4>Compare Approved Label to Production Label</h4>
+        <p class="mb-0">
+            Upload the approved COLA label artwork and a production label image.
+            The system extracts facts from both labels and identifies differences
+            for compliance review.
+        </p>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+        <div class="mb-3">
+            <label class="form-label">Approved Label</label>
+            <input asp-for="Input.ApprovedLabelFile"
+                   type="file"
+                   class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Production Label</label>
+            <input asp-for="Input.ProductionLabelFile"
+                   type="file"
+                   class="form-control" />
+        </div>
+
+        <button class="btn btn-primary btn-lg">
+            Compare Labels
+        </button>
+
+    </form>
+
+    @if (Model.Result != null && Model.ApprovedFacts != null && Model.ProductionFacts != null)
+    {
+        <hr />
+
+        <h3>Extracted Label Facts</h3>
+
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Approved Label</th>
+                    <th>Production Label</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Brand Name</td><td>@Model.ApprovedFacts.BrandName</td><td>@Model.ProductionFacts.BrandName</td></tr>
+                <tr><td>Class / Type</td><td>@Model.ApprovedFacts.ClassType</td><td>@Model.ProductionFacts.ClassType</td></tr>
+                <tr><td>Alcohol Content</td><td>@Model.ApprovedFacts.AlcoholContent</td><td>@Model.ProductionFacts.AlcoholContent</td></tr>
+                <tr><td>Net Contents</td><td>@Model.ApprovedFacts.NetContents</td><td>@Model.ProductionFacts.NetContents</td></tr>
+                <tr><td>Government Warning</td><td>@Model.ApprovedFacts.GovernmentWarning</td><td>@Model.ProductionFacts.GovernmentWarning</td></tr>
+                <tr><td>Appellation</td><td>@Model.ApprovedFacts.Appellation</td><td>@Model.ProductionFacts.Appellation</td></tr>
+                <tr><td>Varietal</td><td>@Model.ApprovedFacts.Varietal</td><td>@Model.ProductionFacts.Varietal</td></tr>
+                <tr><td>Producer Statement</td><td>@Model.ApprovedFacts.ProducerStatement</td><td>@Model.ProductionFacts.ProducerStatement</td></tr>
+                <tr><td>Country of Origin</td><td>@Model.ApprovedFacts.CountryOfOrigin</td><td>@Model.ProductionFacts.CountryOfOrigin</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Verification Result</h3>
+
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card dashboard-card border-success">
+                    <div class="card-body text-center">
+                        <h6>Overall Score</h6>
+                        <h2>@Model.Result.OverallScore%</h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card dashboard-card border-primary">
+                    <div class="card-body text-center">
+                        <h6>Recommendation</h6>
+                        <h2>@Model.Result.Recommendation</h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card dashboard-card border-info">
+                    <div class="card-body text-center">
+                        <h6>Checks Run</h6>
+                        <h2>@Model.Result.ExecutedChecks</h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card dashboard-card border-secondary">
+                    <div class="card-body text-center">
+                        <h6>Skipped Checks</h6>
+                        <h2>@Model.Result.SkippedChecks</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert alert-info">
+            Processing Time:
+            <strong>@Model.ProcessingTimeMs ms</strong>
+        </div>
+
+        <table class="table table-bordered table-striped" style="table-layout:fixed;">
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th style="width:120px;">Status</th>
+                    <th>Expected</th>
+                    <th>Actual</th>
+                    <th style="width:120px;">Confidence</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var check in Model.Result.Checks)
+                {
+                    <tr>
+                        <td>@check.FieldName</td>
+
+                        <td class="status-cell p-0">
+                            @if (check.WasSkipped)
+                            {
+                                <div class="status-skipped">Skipped</div>
+                            }
+                            else if (check.Status == "Pass")
+                            {
+                                <div class="status-pass">Pass</div>
+                            }
+                            else if (check.Status == "Review")
+                            {
+                                <div class="status-review">Review</div>
+                            }
+                            else
+                            {
+                                <div class="status-fail">Fail</div>
+                            }
+                        </td>
+
+                        <td>@check.ExpectedValue</td>
+                        <td>@check.ActualValue</td>
+
+                        <td class="status-cell p-0">
+                            @if (check.WasSkipped)
+                            {
+                                <div class="confidence-skipped">N/A</div>
+                            }
+                            else if (check.ConfidenceScore >= 90)
+                            {
+                                <div class="confidence-high">@check.ConfidenceScore%</div>
+                            }
+                            else if (check.ConfidenceScore >= 75)
+                            {
+                                <div class="confidence-medium">@check.ConfidenceScore%</div>
+                            }
+                            else
+                            {
+                                <div class="confidence-low">@check.ConfidenceScore%</div>
+                            }
+                        </td>
+
+                        <td class="notes-column">@check.Notes</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <h4>Approved Label OCR Text</h4>
+        <pre class="bg-light p-3 border rounded">@Model.ApprovedLabelText</pre>
+
+        <h4>Production Label OCR Text</h4>
+        <pre class="bg-light p-3 border rounded">@Model.ProductionLabelText</pre>
+    }
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

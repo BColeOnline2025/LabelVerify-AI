@@ -6,7 +6,6 @@ using LabelVerify.Web.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddScoped<IOcrService, AzureVisionOcrService>();
 builder.Services.AddScoped<ILabelRule, BrandNameRule>();
@@ -15,9 +14,15 @@ builder.Services.AddScoped<ILabelRule, GovernmentWarningRule>();
 builder.Services.AddScoped<ILabelRule, AlcoholContentRule>();
 builder.Services.AddScoped<ILabelRule, NetContentsRule>();
 builder.Services.AddScoped<ILabelRule, ClassTypeRule>();
+builder.Services.AddScoped<LabelFactExtractionService>();
+builder.Services.AddScoped<LabelComparisonService>();
+builder.Services.AddScoped<IColaPackageIngestionService, ColaPackageIngestionService>();
+builder.Services.AddScoped<ApplicationFieldExtractionService>();
+builder.Services.AddScoped<AzureDocumentOcrService>();
 
 builder.Services.Configure<AzureVisionOptions>(builder.Configuration.GetSection("AzureVision"));
 builder.Services.Configure<ApplicationOptions>(builder.Configuration.GetSection("Application"));
+builder.Services.Configure<AzureDocumentIntelligenceOptions>(builder.Configuration.GetSection("AzureDocumentIntelligence"));
 
 var app = builder.Build();
 
