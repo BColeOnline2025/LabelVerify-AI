@@ -58,16 +58,6 @@ namespace LabelVerify.Web.Services
                 return ReviewMissing(fieldName, approved, production);
             }
 
-            if (IsMissingOrNotApplicable(approved) && IsMissingOrNotApplicable(production))
-            {
-                return Skipped(fieldName, "Field was not detected on either source.");
-            }
-
-            if (IsMissingOrNotApplicable(approved) || IsMissingOrNotApplicable(production))
-            {
-                return ReviewMissing(fieldName, approved, production);
-            }
-
             var isMatch = Normalize(approved) == Normalize(production);
 
             return new FieldCheckResult
@@ -135,24 +125,10 @@ namespace LabelVerify.Web.Services
 
             if (approvedMissing && productionMissing)
             {
-                return allowSkip
-                    ? Skipped(fieldName, "Optional field was not applicable or not detected on either source.")
-                    : ReviewMissing(fieldName, approved, production);
+                return Skipped(fieldName, $"{fieldName} is not applicable for this product.");
             }
 
             if (approvedMissing || productionMissing)
-            {
-                return ReviewMissing(fieldName, approved, production);
-            }
-
-            if (IsMissingOrNotApplicable(approved) && IsMissingOrNotApplicable(production))
-            {
-                return allowSkip
-                    ? Skipped(fieldName, "Optional field was not detected on either source.")
-                    : ReviewMissing(fieldName, approved, production);
-            }
-
-            if (IsMissingOrNotApplicable(approved) || IsMissingOrNotApplicable(production))
             {
                 return ReviewMissing(fieldName, approved, production);
             }
@@ -295,7 +271,8 @@ namespace LabelVerify.Web.Services
         private static bool IsMissingOrNotApplicable(string value)
         {
             return string.IsNullOrWhiteSpace(value) ||
-                   value.Equals("Not Applicable", StringComparison.OrdinalIgnoreCase);
+                value.Equals("Not Applicable", StringComparison.OrdinalIgnoreCase) ||
+                value.Equals("N/A", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

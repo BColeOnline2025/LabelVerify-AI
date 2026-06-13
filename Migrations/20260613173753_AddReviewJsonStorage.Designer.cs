@@ -4,6 +4,7 @@ using LabelVerify.Web.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LabelVerify.Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260613173753_AddReviewJsonStorage")]
+    partial class AddReviewJsonStorage
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -75,12 +78,6 @@ namespace LabelVerify.Web.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("AuditReportBlobUrl")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ColaPackageBlobUrl")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("ColaPackageFileName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -95,9 +92,6 @@ namespace LabelVerify.Web.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ProductionLabelBlobUrlsJson")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Recommendation")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -107,9 +101,6 @@ namespace LabelVerify.Web.Migrations
 
                     b.Property<string>("UploadedLabelFiles")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ZipPackageBlobUrl")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");

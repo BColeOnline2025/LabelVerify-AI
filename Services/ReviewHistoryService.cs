@@ -1,5 +1,6 @@
 ﻿using LabelVerify.Web.Data;
 using LabelVerify.Web.Models;
+using System.Text.Json;
 
 namespace LabelVerify.Web.Services
 {
@@ -27,7 +28,9 @@ namespace LabelVerify.Web.Services
                 OverallScore = result.OverallScore,
                 ProcessingTimeMs = processingTimeMs,
                 ColaPackageFileName = colaPackageFileName,
-                UploadedLabelFiles = string.Join("; ", productionLabelFiles)
+                UploadedLabelFiles = string.Join("; ", productionLabelFiles),
+                ApprovedProfileJson = JsonSerializer.Serialize(approved),
+                ProductionFactsJson = JsonSerializer.Serialize(production)
             };
 
             foreach (var check in result.Checks)

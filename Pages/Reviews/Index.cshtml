@@ -6,15 +6,127 @@
     <div class="alert alert-primary">
         Historical compliance reviews stored in Azure SQL.
     </div>
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card h-100 border-primary">
+                <div class="card-body text-center">
+                    <h6>Total Reviews</h6>
+                    <h2>@Model.Metrics.TotalReviews</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-success">
+                <div class="card-body text-center">
+                    <h6>Approved</h6>
+                    <h2>@Model.Metrics.ApprovedCount</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-warning">
+                <div class="card-body text-center">
+                    <h6>Review</h6>
+                    <h2>@Model.Metrics.ReviewCount</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-danger">
+                <div class="card-body text-center">
+                    <h6>Rejected</h6>
+                    <h2>@Model.Metrics.RejectedCount</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header">
+            <strong>Top Failure Reasons</strong>
+        </div>
+        <div class="card-body">
+            @if (Model.TopFailures.Any())
+            {
+                <table class="table table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th class="text-end">Failures</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var failure in Model.TopFailures)
+                        {
+                            <tr>
+                                <td>@failure.FieldName</td>
+                                <td class="text-end">@failure.Count</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="alert alert-success mb-0">No failures recorded.</div>
+            }
+        </div>
+    </div>
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6>Average Compliance Score</h6>
+                    <h2>@Model.Metrics.AverageScore.ToString("N1")%</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    <form method="get" class="card mb-4">
+        <div class="col-md-12 d-flex align-items-end">
+            <div class="btn-group w-100">
+                <button class="btn btn-primary">Search</button>&nbsp;
+                <a asp-page="./Index" class="btn btn-secondary">Clear</a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <label>Recommendation</label>
+                    <select asp-for="Recommendation" class="form-select">
+                        <option value="">All</option>
+                        <option>Approve</option>
+                        <option>Review</option>
+                        <option>Reject</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label>Minimum Score</label>
+                    <input asp-for="MinimumScore" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label>COLA Package</label>
+                    <input asp-for="ColaPackageFileName" class="form-control" />
+                </div>
+                <div class="col-md-2">
+                    <label>Start Date (Local)</label>
+                    <input asp-for="StartDate" type="date" class="form-control" />
+                </div>
+                <div class="col-md-2">
+                    <label>End Date (Local)</label>
+                    <input asp-for="EndDate" type="date" class="form-control" />
+                </div>
+            </div>
+        </div>
+    </form>
     <table class="table table-bordered table-striped">
         <thead>
             <tr>
                 <th>Date</th>
-                <th>Recommendation</th>
-                <th>Score</th>
-                <th>Processing Time</th>
+                <th class="text-center" style="width:160px;">Recommendation</th>
+                <th class="text-center" style="width:60px;">Score</th>
+                <th class="text-center" style="width:150px;">Processing Time</th>
                 <th>COLA Package</th>
-                <th>Actions</th>
+                <th class="text-center" style="width:140px;">Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -22,30 +134,30 @@
             {
                 <tr>
                     <td>@review.ReviewDateUtc.ToLocalTime()</td>
-                    <td>
+                    <td class="p-1">
                         @if (review.Recommendation == "Approve")
                         {
-                            <span class="badge bg-success">
+                            <div class="review-status-tile bg-success text-white">
                                 @review.Recommendation
-                            </span>
+                            </div>
                         }
                         else if (review.Recommendation == "Review")
                         {
-                            <span class="badge bg-warning text-dark">
+                            <div class="review-status-tile bg-warning text-dark">
                                 @review.Recommendation
-                            </span>
+                            </div>
                         }
                         else
                         {
-                            <span class="badge bg-danger">
+                            <div class="review-status-tile bg-danger text-white">
                                 @review.Recommendation
-                            </span>
+                            </div>
                         }
                     </td>
-                    <td>@review.OverallScore%</td>
-                    <td>@review.ProcessingTimeMs ms</td>
+                    <td class="text-center">@review.OverallScore%</td>
+                    <td class="text-center">@review.ProcessingTimeMs ms</td>
                     <td>@review.ColaPackageFileName</td>
-                    <td><a asp-page="./Details" asp-route-id="@review.Id" class="btn btn-sm btn-primary">View</a></td>
+                    <td class="p-1"><a asp-page="./Details" asp-route-id="@review.Id" class="btn btn-primary w-100">View</a></td>
                 </tr>
             }
         </tbody>
