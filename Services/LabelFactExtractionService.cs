@@ -17,6 +17,7 @@ namespace LabelVerify.Web.Services
                 Appellation = ExtractAppellation(text),
                 Varietal = ExtractVarietal(text),
                 ProducerStatement = ExtractProducerStatement(text),
+                FancifulName = ExtractFancifulName(text),
                 CountryOfOrigin = ExtractCountryOfOrigin(text)
             };
         }
@@ -158,13 +159,72 @@ namespace LabelVerify.Web.Services
             return match.Success ? match.Value.Trim() : string.Empty;
         }
 
+        private static string ExtractFancifulName(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return string.Empty;
+            }
+
+            var knownFancifulNames = new[]
+            {
+                "Small Batch Reserve",
+                "Reserve Collection",
+                "Single Barrel",
+                "Barrel Select",
+                "Limited Release"
+            };
+
+            foreach (var name in knownFancifulNames)
+            {
+                if (text.Contains(name, StringComparison.OrdinalIgnoreCase))
+                {
+                    return name;
+                }
+            }
+
+            return string.Empty;
+        }
+
         private static string ExtractCountryOfOrigin(string text)
         {
-            var match = Regex.Match(
-                text,
-                @"(?i)\b(product of|imported from)\s+([a-zA-Z\s]+)");
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return string.Empty;
+            }
 
-            return match.Success ? match.Value.Trim() : string.Empty;
+            var patterns = new[]
+            {
+                @"(?im)^\s*(produced in the usa)\s*$",
+                @"(?im)^\s*(produced in usa)\s*$",
+                @"(?im)^\s*(product of the usa)\s*$",
+                @"(?im)^\s*(product of usa)\s*$",
+                @"(?im)^\s*(made in the usa)\s*$",
+                @"(?im)^\s*(made in usa)\s*$",
+                @"(?im)^\s*(imported from\s+[a-zA-Z\s]+)\s*$"
+            };
+
+            foreach (var pattern in patterns)
+            {
+                var match = Regex.Match(text, pattern);
+
+                if (match.Success)
+                {
+                    return CleanValue(match.Groups[1].Value);
+                }
+            }
+
+            if (text.Contains("PRODUCED IN THE USA", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Produced In The USA";
+            }
+
+            if (text.Contains("PRODUCT OF USA", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Product Of USA";
+            }
+
+            return string.Empty;
         }
 
         private static string NormalizeUnit(string value)
@@ -185,6 +245,15 @@ namespace LabelVerify.Web.Services
                 .Split(Environment.NewLine)
                 .Select(x => x.Trim())
                 .Where(x => !string.IsNullOrWhiteSpace(x))];
+        }
+
+        private static string CleanValue(string value)
+        {
+            return value
+                .Trim()
+                .Trim(':')
+                .Trim('-')
+                .Trim();
         }
     }
 }

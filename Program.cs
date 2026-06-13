@@ -3,6 +3,7 @@ using LabelVerify.Web.Services;
 using LabelVerify.Web.Services.Interfaces;
 using LabelVerify.Web.Services.OCR;
 using LabelVerify.Web.Options;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,10 +20,17 @@ builder.Services.AddScoped<LabelComparisonService>();
 builder.Services.AddScoped<IColaPackageIngestionService, ColaPackageIngestionService>();
 builder.Services.AddScoped<ApplicationFieldExtractionService>();
 builder.Services.AddScoped<AzureDocumentOcrService>();
+builder.Services.AddScoped<ColaPackageComparisonService>();
+builder.Services.AddScoped<ComplianceReportService>();
+builder.Services.AddScoped<PdfAuditReportGenerator>();
 
 builder.Services.Configure<AzureVisionOptions>(builder.Configuration.GetSection("AzureVision"));
 builder.Services.Configure<ApplicationOptions>(builder.Configuration.GetSection("Application"));
 builder.Services.Configure<AzureDocumentIntelligenceOptions>(builder.Configuration.GetSection("AzureDocumentIntelligence"));
+
+QuestPDF.Settings.License = LicenseType.Community;
+
+builder.Services.AddMemoryCache();
 
 var app = builder.Build();
 
@@ -36,6 +44,5 @@ app.UseHttpsRedirection();
 app.UseRouting();
 app.UseAuthorization();
 app.MapStaticAssets();
-app.MapRazorPages()
-   .WithStaticAssets();
+app.MapRazorPages().WithStaticAssets();
 app.Run();

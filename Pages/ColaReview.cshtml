@@ -16,7 +16,7 @@
             ✓ OCR Extraction |
             ✓ Approved Product Profile |
             ✓ Raw OCR Review |
-            ✓ Future Production Label Comparison
+            ✓ Production Label Comparison
         </small>
     </div>
 
@@ -29,10 +29,7 @@
         </div>
         <div class="mb-3">
             <label class="form-label">Production Label Image</label>
-            <input asp-for="Input.ProductionLabelImage" type="file" accept="image/*,.pdf" class="form-control" />
-            <div class="form-text">
-                Optional for this first version. The next iteration will compare this label against the approved profile.
-            </div>
+            <input asp-for="Input.ProductionLabelImages" type="file" accept="image/*,.pdf" class="form-control" multiple />
         </div>
         <button class="btn btn-primary btn-lg">
             Extract Approved Profile
@@ -134,25 +131,204 @@
 
         @if (Model.ProcessingTimeMs > 0)
         {
-            <div class="alert alert-info">
-                Package Processing Time:
-                <strong>@Model.ProcessingTimeMs ms</strong>
+            <div class="alert alert-info d-flex justify-content-between align-items-center">
 
-                @if (Model.ProcessingTimeMs <= 5000)
-                {
-                    <span class="badge bg-success ms-2">Under 5 sec</span>
-                }
-                else
-                {
-                    <span class="badge bg-warning text-dark ms-2">Over 5 sec</span>
-                }
+                <div>
+                    Package Processing Time:
+                    <strong>@Model.ProcessingTimeMs ms</strong>
+                </div>
+
+                <div>
+                    @if (Model.ProcessingTimeMs <= 5000)
+                    {
+                        <span class="badge bg-success fs-6">
+                            Performance Target Met
+                        </span>
+                    }
+                    else if (Model.ProcessingTimeMs <= 6000)
+                    {
+                        <span class="badge bg-warning text-dark fs-6">
+                            Near Target
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger fs-6">
+                            Performance Review Needed
+                        </span>
+                    }
+
+                    <span class="badge bg-dark fs-6 ms-2">
+                        OCR Engine: Azure Document Intelligence
+                    </span>
+                </div>
             </div>
         }
-
-        <h4>Raw COLA Package OCR Text</h4>
-        <pre class="bg-light p-3 border rounded" style="white-space: pre-wrap;">@Model.PackageOcrText</pre>
     }
 </div>
+
+@if (Model.Result != null)
+{
+    <hr />
+    @if (!string.IsNullOrWhiteSpace(Model.ReviewId))
+    {
+        <a asp-page-handler="Export" asp-route-reviewId="@Model.ReviewId" class="btn btn-success mb-3">Export Compliance Report PDF</a>
+
+        <a asp-page-handler="ExportCsv" asp-route-reviewId="@Model.ReviewId" class="btn btn-success mb-3">Export CSV</a>
+
+        <a asp-page-handler="ExportDetailedCsv" asp-route-reviewId="@Model.ReviewId" class="btn btn-success mb-3">Export Detailed CSV</a>
+
+        <a asp-page-handler="ExportZip" asp-route-reviewId="@Model.ReviewId" class="btn btn-success mb-3">Export Review Package ZIP</a>
+        <hr />
+    }
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6>Approved Profile</h6>
+                    <div>@Model.ApprovedProfile?.BrandName</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6>Production Label</h6>
+                    <div>@Model.ProductionFacts?.BrandName</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6>Recommendation</h6>
+                    <div>@Model.Result.Recommendation</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <hr />
+    <h3>Verification Result</h3>
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card dashboard-card border-success">
+                <div class="card-body text-center">
+                    <h6>Overall Score</h6>
+                    <h2>@Model.Result.OverallScore%</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card dashboard-card border-primary">
+                <div class="card-body text-center">
+                    <h6>Recommendation</h6>
+                    <h2>@Model.Result.Recommendation</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card dashboard-card border-info">
+                <div class="card-body text-center">
+                    <h6>Checks Run</h6>
+                    <h2>@Model.Result.ExecutedChecks</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card dashboard-card border-secondary">
+                <div class="card-body text-center">
+                    <h6>Skipped Checks</h6>
+                    <h2>@Model.Result.SkippedChecks</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    <table class="table table-bordered table-striped mb-0" style="table-layout:fixed;">
+        <thead>
+            <tr>
+                <th style="width:180px;">Field</th>
+                <th>Approved</th>
+                <th>Production</th>
+                <th style="width:180px;">Found On</th>
+                <th style="width:120px; text-align:center;">Status</th>
+                <th style="width:120px; text-align:center;">Confidence</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var check in Model.Result.Checks)
+            {
+                <tr>
+                    <td>@check.FieldName</td>
+                    <td>@check.ExpectedValue</td>
+                    <td>@check.ActualValue</td>
+                    <td>@check.SourceLabel</td>
+                    <td class="status-cell p-0">
+                        @if (check.WasSkipped)
+                        {
+                            <div class="status-skipped">Skipped</div>
+                        }
+                        else if (check.Status == "Pass")
+                        {
+                            <div class="status-pass">Pass</div>
+                        }
+                        else if (check.Status == "Review")
+                        {
+                            <div class="status-review">Review</div>
+                        }
+                        else
+                        {
+                            <div class="status-fail">Fail</div>
+                        }
+                    </td>
+                    <td class="status-cell p-0">
+                        @if (check.WasSkipped)
+                        {
+                            <div class="confidence-skipped">
+                                N/A
+                            </div>
+                        }
+                        else if (check.ConfidenceScore >= 90)
+                        {
+                            <div class="confidence-high">
+                                @check.ConfidenceScore%
+                            </div>
+                        }
+                        else if (check.ConfidenceScore >= 75)
+                        {
+                            <div class="confidence-medium">
+                                @check.ConfidenceScore%
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="confidence-low">
+                                @check.ConfidenceScore%
+                            </div>
+                        }
+                    </td>
+                    <td class="notes-column">@check.Notes</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <br />
+    <button class="btn btn-outline-secondary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#colaOcr">
+        View COLA Package OCR
+    </button>
+
+    <div id="colaOcr" class="collapse">
+        <textarea class="form-control mb-3" rows="12" readonly>@Model.PackageOcrText</textarea>
+    </div>
+
+    <button class="btn btn-outline-secondary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#labelOcr">
+        View Production Label OCR
+    </button>
+
+    <div id="labelOcr" class="collapse">
+        <textarea class="form-control" rows="12" readonly>@Model.ProductionLabelOcrText</textarea>
+    </div>
+}
 
 @functions {
     private static string DisplayValue(string? value)
