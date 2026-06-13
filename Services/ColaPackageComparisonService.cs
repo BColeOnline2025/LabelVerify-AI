@@ -45,12 +45,25 @@ namespace LabelVerify.Web.Services
 
         private static FieldCheckResult CompareExact(string fieldName, string approved, string production)
         {
-            if (string.IsNullOrWhiteSpace(approved) && string.IsNullOrWhiteSpace(production))
+            var approvedMissing = IsMissingOrNotApplicable(approved);
+            var productionMissing = IsMissingOrNotApplicable(production);
+
+            if (approvedMissing && productionMissing)
+            {
+                return Skipped(fieldName, "Field was not applicable or not detected on either source.");
+            }
+
+            if (approvedMissing || productionMissing)
+            {
+                return ReviewMissing(fieldName, approved, production);
+            }
+
+            if (IsMissingOrNotApplicable(approved) && IsMissingOrNotApplicable(production))
             {
                 return Skipped(fieldName, "Field was not detected on either source.");
             }
 
-            if (string.IsNullOrWhiteSpace(approved) || string.IsNullOrWhiteSpace(production))
+            if (IsMissingOrNotApplicable(approved) || IsMissingOrNotApplicable(production))
             {
                 return ReviewMissing(fieldName, approved, production);
             }
@@ -117,14 +130,29 @@ namespace LabelVerify.Web.Services
 
         private static FieldCheckResult CompareFuzzy(string fieldName, string approved, string production, bool allowSkip = false)
         {
-            if (string.IsNullOrWhiteSpace(approved) && string.IsNullOrWhiteSpace(production))
+            var approvedMissing = IsMissingOrNotApplicable(approved);
+            var productionMissing = IsMissingOrNotApplicable(production);
+
+            if (approvedMissing && productionMissing)
+            {
+                return allowSkip
+                    ? Skipped(fieldName, "Optional field was not applicable or not detected on either source.")
+                    : ReviewMissing(fieldName, approved, production);
+            }
+
+            if (approvedMissing || productionMissing)
+            {
+                return ReviewMissing(fieldName, approved, production);
+            }
+
+            if (IsMissingOrNotApplicable(approved) && IsMissingOrNotApplicable(production))
             {
                 return allowSkip
                     ? Skipped(fieldName, "Optional field was not detected on either source.")
                     : ReviewMissing(fieldName, approved, production);
             }
 
-            if (string.IsNullOrWhiteSpace(approved) || string.IsNullOrWhiteSpace(production))
+            if (IsMissingOrNotApplicable(approved) || IsMissingOrNotApplicable(production))
             {
                 return ReviewMissing(fieldName, approved, production);
             }
@@ -158,18 +186,55 @@ namespace LabelVerify.Web.Services
             };
         }
 
-        private static FieldCheckResult ReviewMissing(string fieldName, string approved, string production)
+        private static FieldCheckResult ReviewMissing(
+            string fieldName,
+            string approved,
+            string production)
         {
+            var approvedMissing = string.IsNullOrWhiteSpace(approved) || approved.Equals("Not Applicable", StringComparison.OrdinalIgnoreCase);
+
+            var productionMissing = string.IsNullOrWhiteSpace(production) || production.Equals("Not Applicable", StringComparison.OrdinalIgnoreCase);
+
+            if (IsOptionalField(fieldName))
+            {
+                return new FieldCheckResult
+                {
+                    FieldName = fieldName,
+                    ExpectedValue = approvedMissing ? "Not Applicable" : approved,
+                    ActualValue = productionMissing ? "Not Applicable" : production,
+                    IsMatch = false,
+                    WasSkipped = false,
+                    Status = "Review",
+                    ConfidenceScore = 50,
+                    Notes = $"{fieldName} is optional or product-dependent. Manual review recommended."
+                };
+            }
+
+            if (IsPanelField(fieldName))
+            {
+                return new FieldCheckResult
+                {
+                    FieldName = fieldName,
+                    ExpectedValue = approvedMissing ? "Not detected" : approved,
+                    ActualValue = productionMissing ? "Not detected" : production,
+                    IsMatch = false,
+                    WasSkipped = false,
+                    Status = "Review",
+                    ConfidenceScore = 50,
+                    Notes = $"{fieldName} may appear on another label panel. Manual review recommended."
+                };
+            }
+
             return new FieldCheckResult
             {
                 FieldName = fieldName,
-                ExpectedValue = string.IsNullOrWhiteSpace(approved) ? "Not detected" : approved,
-                ActualValue = string.IsNullOrWhiteSpace(production) ? "Not detected" : production,
+                ExpectedValue = approvedMissing ? "Not detected" : approved,
+                ActualValue = productionMissing ? "Not detected" : production,
                 IsMatch = false,
                 WasSkipped = false,
-                Status = "Review",
-                ConfidenceScore = 50,
-                Notes = $"{fieldName} was detected on only one source. Agent review recommended."
+                Status = "Fail",
+                ConfidenceScore = 0,
+                Notes = $"{fieldName} is required and was not detected on one source."
             };
         }
 
@@ -178,8 +243,8 @@ namespace LabelVerify.Web.Services
             return new FieldCheckResult
             {
                 FieldName = fieldName,
-                ExpectedValue = "Not applicable",
-                ActualValue = "Not applicable",
+                ExpectedValue = "Not Applicable",
+                ActualValue = "Not Applicable",
                 IsMatch = true,
                 WasSkipped = true,
                 Status = "Skipped",
@@ -199,6 +264,38 @@ namespace LabelVerify.Web.Services
                 .Replace("-", " ")
                 .Replace("/", " ")
                 .Trim();
+        }
+
+        private static bool IsOptionalField(string fieldName)
+        {
+            var optionalFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "Appellation",
+                "Varietal",
+                "Country of Origin",
+                "Producer Statement",
+                "Sulfites Statement"
+            };
+
+            return optionalFields.Contains(fieldName);
+        }
+
+        private static bool IsPanelField(string fieldName)
+        {
+            var panelFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "Government Warning",
+                "Sulfites Statement",
+                "Producer Statement"
+            };
+
+            return panelFields.Contains(fieldName);
+        }
+
+        private static bool IsMissingOrNotApplicable(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ||
+                   value.Equals("Not Applicable", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

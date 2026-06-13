@@ -13,7 +13,7 @@ namespace LabelVerify.Web.Pages
     public class ColaReviewModel(IColaPackageIngestionService colaPackageIngestionService,
         IOcrService ocrService, LabelFactExtractionService labelFactExtractionService,
         ColaPackageComparisonService comparisonService, ComplianceReportService complianceReportService,
-        PdfAuditReportGenerator pdfAuditReportGenerator, IMemoryCache memoryCache) : PageModel
+        PdfAuditReportGenerator pdfAuditReportGenerator, IMemoryCache memoryCache, ReviewHistoryService reviewHistoryService) : PageModel
     {
         private readonly IColaPackageIngestionService _colaPackageIngestionService = colaPackageIngestionService;
         private readonly IOcrService _ocrService = ocrService;
@@ -22,6 +22,7 @@ namespace LabelVerify.Web.Pages
         private readonly ComplianceReportService _complianceReportService = complianceReportService;
         private readonly PdfAuditReportGenerator _pdfAuditReportGenerator = pdfAuditReportGenerator;
         private readonly IMemoryCache _memoryCache = memoryCache;
+        private readonly ReviewHistoryService _reviewHistoryService = reviewHistoryService;
 
         [BindProperty]
         public ColaReviewUploadViewModel Input { get; set; } = new();
@@ -93,6 +94,17 @@ namespace LabelVerify.Web.Pages
                 Result = _comparisonService.Compare(ApprovedProfile, ProductionFacts);
 
                 ApplyFieldSourcesToResult(Result);
+                
+                sw.Stop();
+                ProcessingTimeMs = sw.ElapsedMilliseconds; 
+                
+                var reviewSessionId = await _reviewHistoryService.SaveAsync(
+                    ApprovedProfile,
+                    ProductionFacts,
+                    Result,
+                    Input.ColaPackagePdf.FileName,
+                    Input.ProductionLabelImages.Select(x => x.FileName),
+                    ProcessingTimeMs);
 
                 var uploadedFiles = Input.ProductionLabelImages
                     .Select(x => x.FileName)
@@ -111,8 +123,6 @@ namespace LabelVerify.Web.Pages
             }
             finally
             {
-                sw.Stop();
-                ProcessingTimeMs = sw.ElapsedMilliseconds;
             }
 
             return Page();

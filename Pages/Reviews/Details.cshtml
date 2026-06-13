@@ -1,0 +1,84 @@
+﻿@page "{id:guid}"
+@model LabelVerify.Web.Pages.Reviews.DetailsModel
+
+<div class="container mt-4">
+    <h2>Review Details</h2>
+
+    @if (Model.Review != null)
+    {
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h6>Recommendation</h6>
+                        <h3>@Model.Review.Recommendation</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h6>Score</h6>
+                        <h3>@Model.Review.OverallScore%</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h6>Processing Time</h6>
+                        <h3>@Model.Review.ProcessingTimeMs ms</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h6>Review Date</h6>
+                        <small>
+                            @Model.Review.ReviewDateUtc.ToLocalTime()
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Approved</th>
+                    <th>Production</th>
+                    <th>Found On</th>
+                    <th>Status</th>
+                    <th>Confidence</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Review.Results)
+                {
+                    <tr>
+                        <td>@item.FieldName</td>
+                        <td>@item.ExpectedValue</td>
+                        <td>@item.ActualValue</td>
+                        <td>@item.SourceLabel</td>
+                        <td>
+                            @if (item.Status == "Pass")
+                            {
+                                <span class="badge bg-success">Pass</span>
+                            }
+                            else if (item.Status == "Review")
+                            {
+                                <span class="badge bg-warning text-dark">Review</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">Fail</span>
+                            }
+                        </td>
+                        <td>@item.ConfidenceScore%</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

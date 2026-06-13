@@ -1,0 +1,53 @@
+﻿@page
+@model LabelVerify.Web.Pages.Reviews.IndexModel
+
+<div class="container mt-4">
+    <h2>Review History</h2>
+    <div class="alert alert-primary">
+        Historical compliance reviews stored in Azure SQL.
+    </div>
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Recommendation</th>
+                <th>Score</th>
+                <th>Processing Time</th>
+                <th>COLA Package</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var review in Model.Reviews)
+            {
+                <tr>
+                    <td>@review.ReviewDateUtc.ToLocalTime()</td>
+                    <td>
+                        @if (review.Recommendation == "Approve")
+                        {
+                            <span class="badge bg-success">
+                                @review.Recommendation
+                            </span>
+                        }
+                        else if (review.Recommendation == "Review")
+                        {
+                            <span class="badge bg-warning text-dark">
+                                @review.Recommendation
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">
+                                @review.Recommendation
+                            </span>
+                        }
+                    </td>
+                    <td>@review.OverallScore%</td>
+                    <td>@review.ProcessingTimeMs ms</td>
+                    <td>@review.ColaPackageFileName</td>
+                    <td><a asp-page="./Details" asp-route-id="@review.Id" class="btn btn-sm btn-primary">View</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
