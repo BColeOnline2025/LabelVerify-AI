@@ -4,6 +4,7 @@ using LabelVerify.Web.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LabelVerify.Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260613215641_AddReviewerDisposition")]
+    partial class AddReviewerDisposition
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -104,12 +107,6 @@ namespace LabelVerify.Web.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("AssignedDateUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("AssignedReviewer")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("AuditReportBlobUrl")
                         .HasColumnType("nvarchar(max)");
 
@@ -153,10 +150,6 @@ namespace LabelVerify.Web.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UploadedLabelFiles")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("WorkflowStatus")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 

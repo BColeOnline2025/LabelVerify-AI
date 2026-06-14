@@ -3,14 +3,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LabelVerify.Web.Data
 {
-    public class ApplicationDbContext : DbContext
+    public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
-        {
-        }
-
         public DbSet<ReviewSession> ReviewSessions => Set<ReviewSession>();
-
         public DbSet<ReviewResultEntity> ReviewResults => Set<ReviewResultEntity>();
+        public DbSet<ReviewAuditLog> ReviewAuditLogs => Set<ReviewAuditLog>();
     }
 }

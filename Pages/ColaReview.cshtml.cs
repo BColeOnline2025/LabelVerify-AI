@@ -13,7 +13,10 @@ namespace LabelVerify.Web.Pages
     public class ColaReviewModel(IColaPackageIngestionService colaPackageIngestionService,
         IOcrService ocrService, LabelFactExtractionService labelFactExtractionService,
         ColaPackageComparisonService comparisonService, ComplianceReportService complianceReportService,
-        PdfAuditReportGenerator pdfAuditReportGenerator, IMemoryCache memoryCache, ReviewHistoryService reviewHistoryService) : PageModel
+        PdfAuditReportGenerator pdfAuditReportGenerator, IMemoryCache memoryCache, 
+        ReviewHistoryService reviewHistoryService, AzureBlobStorageService blobStorageService,
+        ILogger<ColaReviewModel> logger, ReviewAuditLogService auditLogService,
+        ReviewQueryService reviewQueryService) : PageModel
     {
         private readonly IColaPackageIngestionService _colaPackageIngestionService = colaPackageIngestionService;
         private readonly IOcrService _ocrService = ocrService;
@@ -23,6 +26,10 @@ namespace LabelVerify.Web.Pages
         private readonly PdfAuditReportGenerator _pdfAuditReportGenerator = pdfAuditReportGenerator;
         private readonly IMemoryCache _memoryCache = memoryCache;
         private readonly ReviewHistoryService _reviewHistoryService = reviewHistoryService;
+        private readonly AzureBlobStorageService _blobStorageService = blobStorageService;
+        private readonly ILogger<ColaReviewModel> _logger = logger;
+        private readonly ReviewAuditLogService _auditLogService = auditLogService;
+        private readonly ReviewQueryService _reviewQueryService = reviewQueryService;
 
         [BindProperty]
         public ColaReviewUploadViewModel Input { get; set; } = new();
@@ -34,6 +41,13 @@ namespace LabelVerify.Web.Pages
         public Dictionary<string, string> ProductionFieldSources { get; set; } = [];
         public long ProcessingTimeMs { get; set; }
         public string? ReviewId { get; set; }
+        public string? ExportCacheId { get; set; }
+        [BindProperty]
+        public string? ReviewerName { get; set; } = string.Empty;
+        [BindProperty]
+        public string? ReviewerNotes { get; set; } = string.Empty;
+        [BindProperty]
+        public string? FinalDisposition { get; set; } = string.Empty;
 
         public void OnGet()
         {
@@ -41,6 +55,8 @@ namespace LabelVerify.Web.Pages
 
         public async Task<IActionResult> OnPostAsync()
         {
+            _logger.LogInformation("COLA review started.");
+            
             if (Input.ColaPackagePdf == null || Input.ColaPackagePdf.Length == 0)
             {
                 ModelState.AddModelError("", "Please upload an approved COLA package PDF.");
@@ -59,8 +75,32 @@ namespace LabelVerify.Web.Pages
             {
                 await using var packageStream = Input.ColaPackagePdf.OpenReadStream();
 
+                var reviewId = Guid.NewGuid();
+
+                await _auditLogService.LogAsync(reviewId, "ReviewStarted", "Review processing started.");
+                
+                var colaBlobUpload = await _blobStorageService.UploadAsync(
+                    packageStream, "cola-packages", $"review-{reviewId}.pdf", "application/pdf");
+                
+                var colaBlobUrl = colaBlobUpload.BlobUrl;
+                var labelBlobUrls = new List<string>();
+
+                foreach (var labelFile in Input.ProductionLabelImages)
+                {
+                    await using var labelStream = labelFile.OpenReadStream();
+
+                    var blobUrl = await _blobStorageService.UploadAsync(
+                        labelStream, "production-labels", $"review-{reviewId}-{labelFile.FileName}", labelFile.ContentType);
+
+                    labelBlobUrls.Add(blobUrl.BlobUrl);
+                }
+
+                packageStream.Position = 0;
+                
                 var packageResult = await _colaPackageIngestionService.ExtractPackageAsync(packageStream);
 
+                await _auditLogService.LogAsync(reviewId, "ColaOcrComplete", "COLA package OCR completed.");
+                
                 ApprovedProfile = packageResult.Profile;
                 PackageOcrText = packageResult.RawOcrText;
 
@@ -91,34 +131,63 @@ namespace LabelVerify.Web.Pages
 
                 ProductionFacts = combinedFacts;
 
+                await _auditLogService.LogAsync(reviewId, "ProductionOcrComplete", "Production label OCR completed.");
+
+                _logger.LogInformation("COLA package extracted. Brand={BrandName}, ProductType={ProductType}",
+                    ApprovedProfile?.BrandName, ApprovedProfile?.ProductType);
+                
                 Result = _comparisonService.Compare(ApprovedProfile, ProductionFacts);
 
+                _logger.LogInformation("COLA review comparison completed. Recommendation={Recommendation}, Score={Score}",
+                    Result?.Recommendation, Result?.OverallScore);
+
+                await _auditLogService.LogAsync(reviewId, "ComparisonComplete",
+                    $"Recommendation={Result.Recommendation}; Score={Result.OverallScore}");
+                
                 ApplyFieldSourcesToResult(Result);
                 
                 sw.Stop();
                 ProcessingTimeMs = sw.ElapsedMilliseconds; 
                 
                 var reviewSessionId = await _reviewHistoryService.SaveAsync(
+                    reviewId,
                     ApprovedProfile,
                     ProductionFacts,
                     Result,
                     Input.ColaPackagePdf.FileName,
                     Input.ProductionLabelImages.Select(x => x.FileName),
-                    ProcessingTimeMs);
+                    ProcessingTimeMs,
+                    colaBlobUrl,
+                    labelBlobUrls);
+
+                ReviewId = reviewSessionId.ToString();
+                FinalDisposition = Result.Recommendation;
 
                 var uploadedFiles = Input.ProductionLabelImages
                     .Select(x => x.FileName)
                     .ToList();
 
-                var report = _complianceReportService.Create(ApprovedProfile, ProductionFacts, Result, uploadedFiles);
+                var report = _complianceReportService.Create(
+                    ApprovedProfile,
+                    ProductionFacts,
+                    Result,
+                    uploadedFiles);
 
-                ReviewId = Guid.NewGuid().ToString("N");
+                ExportCacheId = Guid.NewGuid().ToString("N");
 
-                _memoryCache.Set(ReviewId, report, TimeSpan.FromMinutes(30));
+                _memoryCache.Set(ExportCacheId, report, TimeSpan.FromMinutes(30));
+
+                await _auditLogService.LogAsync(reviewId, "ReviewSaved", "Review successfully saved.");
+                
+                _logger.LogInformation("COLA review saved. ReviewSessionId={ReviewSessionId}, ProcessingTimeMs={ProcessingTimeMs}",
+                    reviewSessionId, ProcessingTimeMs);
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "COLA review failed.");
+
                 ModelState.AddModelError("", $"Unable to process review: {ex.Message}");
+
                 return Page();
             }
             finally
@@ -394,6 +463,14 @@ namespace LabelVerify.Web.Pages
                 {
                     WriteIndented = true
                 });
+        }
+
+        public async Task<IActionResult> OnPostDispositionAsync(Guid id)
+        {
+            await _reviewQueryService.UpdateDispositionAsync(id, ReviewerName, FinalDisposition, ReviewerNotes);
+            await _auditLogService.LogAsync(id, "DispositionUpdated", $"Disposition set to {FinalDisposition} by {ReviewerName}");
+
+            return RedirectToPage(new { id });
         }
     }
 }

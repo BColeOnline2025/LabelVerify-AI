@@ -16,5 +16,13 @@
         public string? ProductionLabelBlobUrlsJson { get; set; }
         public string? AuditReportBlobUrl { get; set; }
         public string? ZipPackageBlobUrl { get; set; }
+        public string? ReviewerName { get; set; }
+        public string? ReviewerNotes { get; set; }
+        public string? FinalDisposition { get; set; }
+        public DateTime? DispositionDateUtc { get; set; }
+        public string WorkflowStatus { get; set; } = "Submitted";
+        public string? AssignedReviewer { get; set; }
+        public DateTime? AssignedDateUtc { get; set; }
+        public int AgeDays => (DateTime.UtcNow - ReviewDateUtc).Days;
     }
 }

@@ -1,0 +1,88 @@
+﻿using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using Azure.Storage.Sas;
+using LabelVerify.Web.Models;
+using LabelVerify.Web.Options;
+using Microsoft.Extensions.Options;
+
+namespace LabelVerify.Web.Services
+{
+    public interface IAzureBlobStorageService
+    {
+        Task<string> UploadAsync(Stream stream, string container, string fileName);
+        Task<byte[]> DownloadAsync(string container, string blobName);
+    }
+
+    public class AzureBlobStorageService(IOptions<AzureBlobStorageOptions> options)
+    {
+        private readonly AzureBlobStorageOptions _options = options.Value;
+
+        public async Task<BlobUploadResult> UploadAsync(Stream stream, string containerName, string blobName, string contentType)
+        {
+            if (string.IsNullOrWhiteSpace(_options.ConnectionString))
+            {
+                throw new InvalidOperationException("Azure Blob Storage is not configured.");
+            }
+
+            var containerClient = new BlobContainerClient(_options.ConnectionString, containerName);
+
+            await containerClient.CreateIfNotExistsAsync(PublicAccessType.None);
+
+            var blobClient = containerClient.GetBlobClient(blobName);
+
+            stream.Position = 0;
+
+            await blobClient.UploadAsync(stream, new BlobHttpHeaders{ContentType = contentType});
+
+            return new BlobUploadResult
+            {
+                ContainerName = containerName,
+                BlobName = blobName,
+                BlobUrl = blobClient.Uri.ToString()
+            };
+        }
+
+        public string GenerateReadSasUrl(string containerName, string blobName, int expirationMinutes = 15)
+        {
+            var containerClient = new BlobContainerClient(_options.ConnectionString, containerName);
+
+            var blobClient = containerClient.GetBlobClient(blobName);
+
+            var sasBuilder = new BlobSasBuilder
+            {
+                BlobContainerName = containerName,
+                BlobName = blobName,
+                Resource = "b",
+                ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(expirationMinutes)
+            };
+
+            sasBuilder.SetPermissions(BlobSasPermissions.Read);
+
+            return blobClient
+                .GenerateSasUri(sasBuilder)
+                .ToString();
+        }
+
+        public string GenerateReadSasUrl(string blobUrl, int expirationMinutes = 15)
+        {
+            if (string.IsNullOrWhiteSpace(blobUrl))
+            {
+                return string.Empty;
+            }
+
+            var uri = new Uri(blobUrl);
+            var path = uri.AbsolutePath.TrimStart('/');
+            var firstSlash = path.IndexOf('/');
+
+            if (firstSlash < 0)
+            {
+                throw new InvalidOperationException("Invalid blob URL. Unable to determine container and blob name.");
+            }
+
+            var containerName = path[..firstSlash];
+            var blobName = path[(firstSlash + 1)..];
+
+            return GenerateReadSasUrl(containerName, blobName, expirationMinutes);
+        }
+    }
+}

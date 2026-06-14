@@ -7,12 +7,29 @@ using System.Text.Json;
 
 namespace LabelVerify.Web.Pages.Reviews
 {
-    public class DetailsModel(ReviewQueryService reviewQueryService, PdfAuditReportGenerator pdfAuditReportGenerator) : PageModel
+    public class DetailsModel(ReviewQueryService reviewQueryService, PdfAuditReportGenerator pdfAuditReportGenerator, 
+        AzureBlobStorageService blobStorageService, ComplianceSummaryService complianceSummaryService,
+        ReviewAuditLogService auditLogService) : PageModel
     {
         private readonly ReviewQueryService _reviewQueryService = reviewQueryService;
         private readonly PdfAuditReportGenerator _pdfAuditReportGenerator = pdfAuditReportGenerator;
+        private readonly AzureBlobStorageService _blobStorageService = blobStorageService;
+        private readonly ComplianceSummaryService _complianceSummaryService = complianceSummaryService;
+        private readonly ReviewAuditLogService _auditLogService = auditLogService;
 
         public ReviewSession? Review { get; set; }
+        public string? ColaPackageDownloadUrl { get; set; }
+        public List<string> ProductionLabelDownloadUrls { get; set; } = [];
+        public string ComplianceSummary { get; set; } = string.Empty;
+        public List<ReviewAuditLog> AuditLogs { get; set; } = [];
+        [BindProperty]
+        public string ReviewerName { get; set; } = string.Empty;
+        [BindProperty]
+        public string ReviewerNotes { get; set; } = string.Empty;
+        [BindProperty]
+        public string FinalDisposition { get; set; } = string.Empty;
+        [BindProperty]
+        public string AssignedReviewer { get; set; } = "";
 
         public async Task<IActionResult> OnGetAsync(Guid id)
         {
@@ -22,6 +39,34 @@ namespace LabelVerify.Web.Pages.Reviews
             {
                 return NotFound();
             }
+
+            if (!string.IsNullOrWhiteSpace(Review.ColaPackageBlobUrl))
+            {
+                ColaPackageDownloadUrl = _blobStorageService.GenerateReadSasUrl(Review.ColaPackageBlobUrl);
+            }
+
+            if (!string.IsNullOrWhiteSpace(Review.ProductionLabelBlobUrlsJson))
+            {
+                var urls = JsonSerializer.Deserialize<List<string>>(Review.ProductionLabelBlobUrlsJson) ?? [];
+
+                ProductionLabelDownloadUrls = [.. urls.Select(url => _blobStorageService.GenerateReadSasUrl(url))];
+            }
+
+            if (Review.WorkflowStatus == "Assigned")
+            {
+                await _reviewQueryService.SaveWorkflowStatusAsync(Review.Id, "In Review");
+
+                Review.WorkflowStatus = "In Review";
+
+                await _auditLogService.LogAsync(Review.Id, "WorkflowStatusChanged", "Status changed from Assigned to In Review");
+            }
+
+            AuditLogs = await _reviewQueryService.GetAuditLogAsync(Review.Id);
+            ReviewerName = Review.ReviewerName ?? "";
+            ReviewerNotes = Review.ReviewerNotes ?? "";
+            FinalDisposition = Review.FinalDisposition ?? Review.Recommendation;
+            ComplianceSummary = _complianceSummaryService.Generate(BuildAuditReport(Review).VerificationResult);
+            AssignedReviewer = Review.AssignedReviewer ?? "";
 
             return Page();
         }
@@ -74,7 +119,7 @@ namespace LabelVerify.Web.Pages.Reviews
                 {
                     Recommendation = review.Recommendation,
                     OverallScore = review.OverallScore,
-                    Checks = review.Results.Select(r => new FieldCheckResult
+                    Checks = [.. review.Results.Select(r => new FieldCheckResult
                     {
                         FieldName = r.FieldName,
                         ExpectedValue = r.ExpectedValue,
@@ -83,7 +128,7 @@ namespace LabelVerify.Web.Pages.Reviews
                         Status = r.Status,
                         ConfidenceScore = r.ConfidenceScore,
                         Notes = r.Notes
-                    }).ToList()
+                    })]
                 }
             };
         }
@@ -181,6 +226,26 @@ namespace LabelVerify.Web.Pages.Reviews
             };
 
             return JsonSerializer.Serialize(metadata, new JsonSerializerOptions{WriteIndented = true});
+        }
+
+        public async Task<IActionResult> OnPostDispositionAsync(Guid id)
+        {
+            await _reviewQueryService.UpdateDispositionAsync(id, ReviewerName,
+                FinalDisposition, ReviewerNotes);
+
+            await _auditLogService.LogAsync(id, "DispositionUpdated",
+                $"Disposition set to {FinalDisposition} by {ReviewerName}");
+
+            return RedirectToPage(new { id });
+        }
+
+        public async Task<IActionResult> OnPostAssignAsync(Guid id)
+        {
+            await _reviewQueryService.AssignReviewerAsync(id, AssignedReviewer);
+
+            await _auditLogService.LogAsync(id, "ReviewAssigned", $"Assigned to {AssignedReviewer}");
+
+            return RedirectToPage(new { id });
         }
     }
 }

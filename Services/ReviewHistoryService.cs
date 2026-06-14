@@ -4,25 +4,17 @@ using System.Text.Json;
 
 namespace LabelVerify.Web.Services
 {
-    public class ReviewHistoryService
+    public class ReviewHistoryService(ApplicationDbContext db)
     {
-        private readonly ApplicationDbContext _db;
+        private readonly ApplicationDbContext _db = db;
 
-        public ReviewHistoryService(ApplicationDbContext db)
-        {
-            _db = db;
-        }
-
-        public async Task<Guid> SaveAsync(
-            ApprovedProductProfile approved,
-            LabelFacts production,
-            VerificationResult result,
-            string colaPackageFileName,
-            IEnumerable<string> productionLabelFiles,
-            long processingTimeMs)
+        public async Task<Guid> SaveAsync(Guid reviewId, ApprovedProductProfile approved, LabelFacts production,
+            VerificationResult result, string colaPackageFileName, IEnumerable<string> productionLabelFiles,
+            long processingTimeMs, string? colaBlobUrl, List<string>? labelBlobUrls)
         {
             var session = new ReviewSession
             {
+                Id = reviewId,
                 ReviewDateUtc = DateTime.UtcNow,
                 Recommendation = result.Recommendation,
                 OverallScore = result.OverallScore,
@@ -30,7 +22,10 @@ namespace LabelVerify.Web.Services
                 ColaPackageFileName = colaPackageFileName,
                 UploadedLabelFiles = string.Join("; ", productionLabelFiles),
                 ApprovedProfileJson = JsonSerializer.Serialize(approved),
-                ProductionFactsJson = JsonSerializer.Serialize(production)
+                ProductionFactsJson = JsonSerializer.Serialize(production),
+                ColaPackageBlobUrl = colaBlobUrl,
+                ProductionLabelBlobUrlsJson = JsonSerializer.Serialize(labelBlobUrls),
+                WorkflowStatus = "Submitted"
             };
 
             foreach (var check in result.Checks)

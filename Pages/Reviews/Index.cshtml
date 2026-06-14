@@ -1,5 +1,6 @@
 ﻿@page
 @model LabelVerify.Web.Pages.Reviews.IndexModel
+@using System.Text.Json
 
 <div class="container mt-4">
     <h2>Review History</h2>
@@ -7,7 +8,7 @@
         Historical compliance reviews stored in Azure SQL.
     </div>
     <div class="row mb-4">
-        <div class="col-md-3">
+        <div class="col-md-2">
             <div class="card h-100 border-primary">
                 <div class="card-body text-center">
                     <h6>Total Reviews</h6>
@@ -15,27 +16,107 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
             <div class="card h-100 border-success">
                 <div class="card-body text-center">
                     <h6>Approved</h6>
-                    <h2>@Model.Metrics.ApprovedCount</h2>
+                    <h2>@Model.Metrics.Approved</h2>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
             <div class="card h-100 border-warning">
                 <div class="card-body text-center">
                     <h6>Review</h6>
-                    <h2>@Model.Metrics.ReviewCount</h2>
+                    <h2>@Model.Metrics.InReview</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card h-100 border-danger">
+                <div class="card-body text-center">
+                    <h6>Rejected</h6>
+                    <h2>@Model.Metrics.Rejected</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-warning text-center">
+                <div class="card-body">
+                    <h6>Over 7 Days</h6>
+                    <h3>@Model.Metrics.AgingOver7Days</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-danger text-center">
+                <div class="card-body">
+                    <h6>Over 14 Days</h6>
+                    <h3>@Model.Metrics.AgingOver14Days</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header">
+            Operational Insights
+        </div>
+        <div class="card-body">
+            @foreach (var insight in Model.OperationalInsights)
+            {
+                <div class="alert alert-info mb-2">
+                    @insight
+                </div>
+            }
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-header">
+                    Workflow Status Distribution
+                </div>
+                <div class="card-body">
+                    <div style="height:300px;">
+                        <canvas id="workflowChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card h-100 border-danger">
-                <div class="card-body text-center">
-                    <h6>Rejected</h6>
-                    <h2>@Model.Metrics.RejectedCount</h2>
+            <div class="card h-100">
+                <div class="card-header">
+                    Reviews by Month
+                </div>
+                <div class="card-body">
+                    <div style="height:300px;">
+                        <canvas id="monthlyReviewChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-header">
+                    Top Failure Reasons
+                </div>
+                <div class="card-body">
+                    <div style="height:300px;">
+                        <canvas id="topFailureChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-header">
+                    Reviewer Productivity
+                </div>
+                <div class="card-body">
+                    <div style="height:300px;">
+                        <canvas id="reviewerProductivityChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -81,6 +162,48 @@
             </div>
         </div>
     </div>
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card text-center border-secondary">
+                <div class="card-body">
+                    <h6>Submitted</h6>
+                    <h3>@Model.Metrics.Submitted</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card text-center border-primary">
+                <div class="card-body">
+                    <h6>Assigned</h6>
+                    <h3>@Model.Metrics.Assigned</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card text-center border-warning">
+                <div class="card-body">
+                    <h6>In Review</h6>
+                    <h3>@Model.Metrics.InReview</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card text-center border-success">
+                <div class="card-body">
+                    <h6>Approved</h6>
+                    <h3>@Model.Metrics.Approved</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card text-center border-danger">
+                <div class="card-body">
+                    <h6>Rejected</h6>
+                    <h3>@Model.Metrics.Rejected</h3>
+                </div>
+            </div>
+        </div>
+    </div>
     <form method="get" class="card mb-4">
         <div class="col-md-12 d-flex align-items-end">
             <div class="btn-group w-100">
@@ -115,17 +238,53 @@
                     <label>End Date (Local)</label>
                     <input asp-for="EndDate" type="date" class="form-control" />
                 </div>
+                <div class="col-md-2">
+                    <label>Status</label>
+
+                    <select asp-for="WorkflowStatus" class="form-select">
+                        <option value="">All</option>
+                        <option>Submitted</option>
+                        <option>Assigned</option>
+                        <option>In Review</option>
+                        <option>Approved</option>
+                        <option>Rejected</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label>Assigned To</label>
+                    <select asp-for="AssignedReviewer" class="form-select">
+                        <option value="">All</option>
+                        <option>Unassigned</option>
+                        <option>Brian Cole</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label>Final Decision</label>
+                    <select asp-for="FinalDisposition" class="form-select">
+                        <option value="">All</option>
+                        <option>Approve</option>
+                        <option>Review</option>
+                        <option>Reject</option>
+                    </select>
+                </div>
             </div>
         </div>
     </form>
+    <div class="mb-2 text-muted">
+        Showing @Model.Reviews.Count of @Model.TotalRecords reviews
+    </div>
     <table class="table table-bordered table-striped">
         <thead>
             <tr>
-                <th>Date</th>
+                <th style="width:120px;">Date</th>
+                <th class="text-center">Age (Days)</th>
                 <th class="text-center" style="width:160px;">Recommendation</th>
+                <th class="text-center" style="width:160px;">Final Decision</th>
                 <th class="text-center" style="width:60px;">Score</th>
-                <th class="text-center" style="width:150px;">Processing Time</th>
+                <th class="text-center">Proc. Time&nbsp;(ms)</th>
                 <th>COLA Package</th>
+                <th class="text-center" style="width:120px;">Status</th>
+                <th>Assigned&nbsp;To</th>
                 <th class="text-center" style="width:140px;">Actions</th>
             </tr>
         </thead>
@@ -133,8 +292,21 @@
             @foreach (var review in Model.Reviews)
             {
                 <tr>
-                    <td>@review.ReviewDateUtc.ToLocalTime()</td>
-                    <td class="p-1">
+                    <td class="align-middle">@review.ReviewDateUtc.ToLocalTime()</td>
+                    <td class="align-middle text-center">
+                        @{var ageDays = (DateTime.UtcNow - review.ReviewDateUtc).Days;}
+                        @{var ageClass = ageDays switch
+                            {
+                                <= 3 => "review-status-tile bg-success text-white",
+                                <= 7 => "review-status-tile bg-warning text-dark",
+                                _ => "review-status-tile bg-danger text-white"
+                            };
+                        }
+                        <span class="@ageClass">
+                            @ageDays
+                        </span>
+                    </td>
+                    <td class="align-middle">
                         @if (review.Recommendation == "Approve")
                         {
                             <div class="review-status-tile bg-success text-white">
@@ -154,12 +326,212 @@
                             </div>
                         }
                     </td>
-                    <td class="text-center">@review.OverallScore%</td>
-                    <td class="text-center">@review.ProcessingTimeMs ms</td>
-                    <td>@review.ColaPackageFileName</td>
-                    <td class="p-1"><a asp-page="./Details" asp-route-id="@review.Id" class="btn btn-primary w-100">View</a></td>
+                    <td class="text-center align-middle">
+                        @{var decision = review.FinalDisposition;}
+
+                        @if (string.IsNullOrWhiteSpace(decision))
+                        {
+                            <div class="review-status-tile bg-secondary text-white">
+                                Pending
+                            </div>
+                        }
+                        else
+                        {
+                            var decisionClass = decision switch
+                            {
+                                "Approve" => "bg-success text-white",
+                                "Review" => "bg-warning text-dark",
+                                "Reject" => "bg-danger text-white",
+                                _ => "bg-secondary text-white"
+                            };
+
+                            <div class="review-status-tile @decisionClass">
+                                @decision
+                            </div>
+                        }
+                    </td>
+                    <td class="text-center align-middle">@review.OverallScore%</td>
+                    <td class="text-center align-middle">@review.ProcessingTimeMs</td>
+                    <td class="align-middle">@review.ColaPackageFileName</td>
+                    <td class="text-center align-middle">
+                        @{
+                            var statusClass = review.WorkflowStatus switch
+                            {
+                                "Submitted" => "review-status-tile bg-secondary text-white",
+                                "In Review" => "review-status-tile bg-warning text-dark",
+                                "Approved" => "review-status-tile bg-success text-white",
+                                "Rejected" => "review-status-tile bg-danger text-white",
+                                _ => "bg-secondary"
+                            };
+                        }
+
+                        <span class="@statusClass">
+                            @review.WorkflowStatus
+                        </span>
+                    </td>
+                    <td class="align-middle">
+                        @if (string.IsNullOrWhiteSpace(review.AssignedReviewer))
+                        {
+                            <span>Unassigned</span>
+                        }
+                        else
+                        {
+                            <span>@review.AssignedReviewer</span>
+                        }
+                    </td>
+                    <td class="align-middle">
+                        <a asp-page="./Details" asp-route-id="@review.Id" class="review-status-tile bg-primary text-white text-decoration-none">
+                            View
+                        </a>
+                    </td>
                 </tr>
             }
         </tbody>
     </table>
 </div>
+<nav>
+    <ul class="pagination justify-content-center">
+        <li class="page-item @(Model.PageNumber == 1 ? "disabled" : "")">
+            <a class="page-link"
+               asp-page="./Index"
+               asp-route-PageNumber="@(Model.PageNumber - 1)"
+               asp-route-Recommendation="@Model.Recommendation"
+               asp-route-MinimumScore="@Model.MinimumScore"
+               asp-route-ColaPackageFileName="@Model.ColaPackageFileName"
+               asp-route-StartDate="@Model.StartDate?.ToString("yyyy-MM-dd")"
+               asp-route-EndDate="@Model.EndDate?.ToString("yyyy-MM-dd")"
+               asp-route-WorkflowStatus="@Model.WorkflowStatus"
+               asp-route-AssignedReviewer="@Model.AssignedReviewer"
+               asp-route-FinalDisposition="@Model.FinalDisposition">
+                Previous
+            </a>
+        </li>
+
+        @for (var i = 1; i <= Model.TotalPages; i++)
+        {
+            <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                <a class="page-link"
+                   asp-page="./Index"
+                   asp-route-PageNumber="@i"
+                   asp-route-Recommendation="@Model.Recommendation"
+                   asp-route-MinimumScore="@Model.MinimumScore"
+                   asp-route-ColaPackageFileName="@Model.ColaPackageFileName"
+                   asp-route-StartDate="@Model.StartDate?.ToString("yyyy-MM-dd")"
+                   asp-route-EndDate="@Model.EndDate?.ToString("yyyy-MM-dd")">
+                    @i
+                </a>
+            </li>
+        }
+
+        <li class="page-item @(Model.PageNumber == Model.TotalPages ? "disabled" : "")">
+            <a class="page-link"
+               asp-page="./Index"
+               asp-route-PageNumber="@(Model.PageNumber + 1)"
+               asp-route-Recommendation="@Model.Recommendation"
+               asp-route-MinimumScore="@Model.MinimumScore"
+               asp-route-ColaPackageFileName="@Model.ColaPackageFileName"
+               asp-route-StartDate="@Model.StartDate?.ToString("yyyy-MM-dd")"
+               asp-route-EndDate="@Model.EndDate?.ToString("yyyy-MM-dd")">
+                Next
+            </a>
+        </li>
+    </ul>
+</nav>
+
+@section Scripts
+{
+    <script>
+        const workflowChart = document.getElementById('workflowChart');
+
+        new Chart(workflowChart, {
+            type: 'doughnut',
+            data: {
+            labels:
+            @Html.Raw(
+                System.Text.Json.JsonSerializer.Serialize(Model.WorkflowChart.Labels)),
+                datasets: [{
+                    data:
+                    @Html.Raw(
+                        System.Text.Json.JsonSerializer.Serialize(
+                            Model.WorkflowChart.Values))
+                    }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
+        const monthlyReviewChart =
+        document.getElementById('monthlyReviewChart');
+
+        new Chart(monthlyReviewChart, {
+            type: 'bar',
+            data: {
+            labels:
+            @Html.Raw(
+                JsonSerializer.Serialize(Model.MonthlyReviewChart.Labels)),
+            datasets: [{
+            label: 'Reviews',
+            data:
+            @Html.Raw(
+                JsonSerializer.Serialize(Model.MonthlyReviewChart.Values))
+            }]
+        },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
+        const topFailureChart = document.getElementById('topFailureChart');
+
+        new Chart(topFailureChart, {
+            type: 'bar',
+            data: {
+            labels:
+            @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                Model.TopFailureChart.Labels)),
+            datasets: [{
+            label: 'Failures',
+            data:
+            @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                Model.TopFailureChart.Values))
+            }]
+        },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
+        const reviewerProductivityChart = document.getElementById('reviewerProductivityChart');
+
+        new Chart(reviewerProductivityChart, {
+            type: 'bar',
+            data: {
+                labels:
+                @Html.Raw(
+                    System.Text.Json.JsonSerializer.Serialize(
+                        Model.ReviewerProductivityChart.Labels)),
+                datasets: [{
+                label: 'Reviews Completed',
+                data:
+                @Html.Raw(
+                    System.Text.Json.JsonSerializer.Serialize(
+                        Model.ReviewerProductivityChart.Values))
+                }]},
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    </script>
+}

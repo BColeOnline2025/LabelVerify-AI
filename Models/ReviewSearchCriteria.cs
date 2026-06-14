@@ -7,5 +7,8 @@
         public string? ColaPackageFileName { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
+        public string? WorkflowStatus { get; set; }
+        public string? AssignedReviewer { get; set; }
+        public string? FinalDisposition { get; set; }
     }
 }

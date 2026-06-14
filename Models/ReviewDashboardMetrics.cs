@@ -7,5 +7,12 @@
         public int ReviewCount { get; set; }
         public int RejectedCount { get; set; }
         public double AverageScore { get; set; }
+        public int Submitted { get; set; }
+        public int Assigned { get; set; }
+        public int InReview { get; set; }
+        public int Approved { get; set; }
+        public int Rejected { get; set; }
+        public int AgingOver7Days { get; set; }
+        public int AgingOver14Days { get; set; }
     }
 }
