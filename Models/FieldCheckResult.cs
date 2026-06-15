@@ -11,5 +11,6 @@
         public bool WasSkipped { get; set; }
         public string Status { get; set; } = string.Empty;
         public string SourceLabel { get; set; } = string.Empty;
+        public string? AiAnalysis { get; set; }
     }
 }

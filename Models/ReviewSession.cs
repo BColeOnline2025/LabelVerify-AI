@@ -24,5 +24,16 @@
         public string? AssignedReviewer { get; set; }
         public DateTime? AssignedDateUtc { get; set; }
         public int AgeDays => (DateTime.UtcNow - ReviewDateUtc).Days;
+        public string? AiComplianceSummary { get; set; }
+        public DateTime? AiSummaryGeneratedUtc { get; set; }
+        public string? AiModelUsed { get; set; }
+        public string? AiPromptVersion { get; set; }
+        public int? AiPromptTokens { get; set; }
+        public int? AiCompletionTokens { get; set; }
+        public int? AiTotalTokens { get; set; }
+        public double? AiGenerationTimeMs { get; set; }
+        public DateTime? AssignedUtc { get; set; }
+        public DateTime? ReviewStartedUtc { get; set; }
+        public DateTime? CompletedUtc { get; set; }
     }
 }

@@ -4,6 +4,7 @@ using LabelVerify.Web.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LabelVerify.Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260615135912_AddAiAnalysis")]
+    partial class AddAiAnalysis
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -103,29 +106,14 @@ namespace LabelVerify.Web.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int?>("AiCompletionTokens")
-                        .HasColumnType("int");
-
                     b.Property<string>("AiComplianceSummary")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<double?>("AiGenerationTimeMs")
-                        .HasColumnType("float");
 
                     b.Property<string>("AiModelUsed")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("AiPromptTokens")
-                        .HasColumnType("int");
-
-                    b.Property<string>("AiPromptVersion")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime?>("AiSummaryGeneratedUtc")
                         .HasColumnType("datetime2");
-
-                    b.Property<int?>("AiTotalTokens")
-                        .HasColumnType("int");
 
                     b.Property<string>("ApprovedProfileJson")
                         .IsRequired()
@@ -137,9 +125,6 @@ namespace LabelVerify.Web.Migrations
                     b.Property<string>("AssignedReviewer")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("AssignedUtc")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("AuditReportBlobUrl")
                         .HasColumnType("nvarchar(max)");
 
@@ -149,9 +134,6 @@ namespace LabelVerify.Web.Migrations
                     b.Property<string>("ColaPackageFileName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("CompletedUtc")
-                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("DispositionDateUtc")
                         .HasColumnType("datetime2");
@@ -177,9 +159,6 @@ namespace LabelVerify.Web.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("ReviewDateUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("ReviewStartedUtc")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ReviewerName")

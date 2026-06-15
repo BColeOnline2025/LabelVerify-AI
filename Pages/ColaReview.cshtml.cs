@@ -16,7 +16,7 @@ namespace LabelVerify.Web.Pages
         PdfAuditReportGenerator pdfAuditReportGenerator, IMemoryCache memoryCache, 
         ReviewHistoryService reviewHistoryService, AzureBlobStorageService blobStorageService,
         ILogger<ColaReviewModel> logger, ReviewAuditLogService auditLogService,
-        ReviewQueryService reviewQueryService) : PageModel
+        ReviewQueryService reviewQueryService, AzureOpenAiSummaryService azureOpenAiSummaryService) : PageModel
     {
         private readonly IColaPackageIngestionService _colaPackageIngestionService = colaPackageIngestionService;
         private readonly IOcrService _ocrService = ocrService;
@@ -30,6 +30,7 @@ namespace LabelVerify.Web.Pages
         private readonly ILogger<ColaReviewModel> _logger = logger;
         private readonly ReviewAuditLogService _auditLogService = auditLogService;
         private readonly ReviewQueryService _reviewQueryService = reviewQueryService;
+        private readonly AzureOpenAiSummaryService _azureOpenAiSummaryService = azureOpenAiSummaryService;
 
         [BindProperty]
         public ColaReviewUploadViewModel Input { get; set; } = new();
@@ -141,37 +142,35 @@ namespace LabelVerify.Web.Pages
                 _logger.LogInformation("COLA review comparison completed. Recommendation={Recommendation}, Score={Score}",
                     Result?.Recommendation, Result?.OverallScore);
 
-                await _auditLogService.LogAsync(reviewId, "ComparisonComplete",
-                    $"Recommendation={Result.Recommendation}; Score={Result.OverallScore}");
+                await _auditLogService.LogAsync(reviewId, "ComparisonComplete", $"Recommendation={Result.Recommendation}; Score={Result.OverallScore}");
                 
                 ApplyFieldSourcesToResult(Result);
+
+                foreach (var check in Result.Checks.Where(x => x.Status == "Fail" || x.Status == "Review"))
+                {
+                    check.AiAnalysis = await _azureOpenAiSummaryService.GenerateFailureAnalysisAsync(check);
+                }
+
+                var aiResult = await _azureOpenAiSummaryService.GenerateComplianceSummaryAsync(ApprovedProfile, ProductionFacts, Result);
+
+                await _auditLogService.LogAsync(reviewId, "AISummaryGenerated", "Azure OpenAI compliance summary generated."); 
                 
                 sw.Stop();
-                ProcessingTimeMs = sw.ElapsedMilliseconds; 
-                
+                ProcessingTimeMs = sw.ElapsedMilliseconds;
+
                 var reviewSessionId = await _reviewHistoryService.SaveAsync(
-                    reviewId,
-                    ApprovedProfile,
-                    ProductionFacts,
-                    Result,
-                    Input.ColaPackagePdf.FileName,
-                    Input.ProductionLabelImages.Select(x => x.FileName),
-                    ProcessingTimeMs,
-                    colaBlobUrl,
-                    labelBlobUrls);
+                    reviewId, ApprovedProfile, ProductionFacts, Result, Input.ColaPackagePdf.FileName,
+                    Input.ProductionLabelImages.Select(x => x.FileName), ProcessingTimeMs, colaBlobUrl,
+                    labelBlobUrls, aiResult.Summary, aiResult.GeneratedUtc, aiResult.ModelUsed,
+                    aiResult.PromptVersion, aiResult.PromptTokens, aiResult.CompletionTokens,
+                    aiResult.TotalTokens, aiResult.GenerationTimeMs);
 
                 ReviewId = reviewSessionId.ToString();
                 FinalDisposition = Result.Recommendation;
 
-                var uploadedFiles = Input.ProductionLabelImages
-                    .Select(x => x.FileName)
-                    .ToList();
+                var uploadedFiles = Input.ProductionLabelImages.Select(x => x.FileName).ToList();
 
-                var report = _complianceReportService.Create(
-                    ApprovedProfile,
-                    ProductionFacts,
-                    Result,
-                    uploadedFiles);
+                var report = _complianceReportService.Create(ApprovedProfile, ProductionFacts, Result, uploadedFiles);
 
                 ExportCacheId = Guid.NewGuid().ToString("N");
 

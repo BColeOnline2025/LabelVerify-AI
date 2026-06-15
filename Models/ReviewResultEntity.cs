@@ -12,5 +12,6 @@
         public string Status { get; set; } = string.Empty;
         public double ConfidenceScore { get; set; }
         public string Notes { get; set; } = string.Empty;
+        public string? AiAnalysis { get; set; }
     }
 }

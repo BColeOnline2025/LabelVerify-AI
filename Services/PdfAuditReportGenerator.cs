@@ -29,6 +29,21 @@ namespace LabelVerify.Web.Services
 
                         col.Item().LineHorizontal(1);
 
+                        if (!string.IsNullOrWhiteSpace(report.AiComplianceSummary))
+                        {
+                            col.Item().Text("AI Compliance Summary")
+                                .FontSize(14)
+                                .Bold();
+
+                            col.Item()
+                                .Background(Colors.Blue.Lighten5)
+                                .Padding(10)
+                                .Text(report.AiComplianceSummary)
+                                .FontSize(10);
+
+                            col.Item().LineHorizontal(1);
+                        }
+
                         col.Item().Text("Approved Product Profile").FontSize(14).Bold();
 
                         col.Item().Table(table =>

@@ -9,5 +9,6 @@
         public LabelFacts ProductionFacts { get; set; }= new();
         public VerificationResult VerificationResult { get; set; } = new();
         public List<string> UploadedLabels { get; set; } = [];
+        public string? AiComplianceSummary { get; set; }
     }
 }

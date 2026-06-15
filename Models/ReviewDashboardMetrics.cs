@@ -14,5 +14,20 @@
         public int Rejected { get; set; }
         public int AgingOver7Days { get; set; }
         public int AgingOver14Days { get; set; }
+        public int MyAssigned { get; set; }
+        public int MyInReview { get; set; }
+        public int MyCompleted { get; set; }
+        public int Unassigned { get; set; }
+        public double AverageReviewHours { get; set; }
+        public string FastestReviewer { get; set; } = "N/A";
+        public double FastestReviewerAverageHours { get; set; }
+        public int OldestOpenReviewDays { get; set; }
+        public int ReviewsExceedingSla { get; set; }
+        public double ApprovalRate { get; set; }
+        public double ReviewRate { get; set; }
+        public double RejectionRate { get; set; }
+        public string? OperationalInsights { get; set; }
+        public DateTime? OperationalInsightsGeneratedUtc { get; set; }
+        public string? OperationalInsightsModel { get; set; }
     }
 }

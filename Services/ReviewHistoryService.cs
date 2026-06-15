@@ -10,7 +10,9 @@ namespace LabelVerify.Web.Services
 
         public async Task<Guid> SaveAsync(Guid reviewId, ApprovedProductProfile approved, LabelFacts production,
             VerificationResult result, string colaPackageFileName, IEnumerable<string> productionLabelFiles,
-            long processingTimeMs, string? colaBlobUrl, List<string>? labelBlobUrls)
+            long processingTimeMs, string? colaBlobUrl, List<string>? labelBlobUrls, string? aiComplianceSummary,
+            DateTime? aiSummaryGeneratedUtc, string? aiModelUsed, string? aiPromptVersion, int? aiPromptTokens,
+            int? aiCompletionTokens, int? aiTotalTokens, double? aiGenerationTimeMs)
         {
             var session = new ReviewSession
             {
@@ -25,7 +27,15 @@ namespace LabelVerify.Web.Services
                 ProductionFactsJson = JsonSerializer.Serialize(production),
                 ColaPackageBlobUrl = colaBlobUrl,
                 ProductionLabelBlobUrlsJson = JsonSerializer.Serialize(labelBlobUrls),
-                WorkflowStatus = "Submitted"
+                WorkflowStatus = "Submitted",
+                AiComplianceSummary = aiComplianceSummary,
+                AiSummaryGeneratedUtc = aiSummaryGeneratedUtc,
+                AiModelUsed = aiModelUsed,
+                AiPromptVersion = aiPromptVersion,
+                AiPromptTokens = aiPromptTokens,
+                AiCompletionTokens = aiCompletionTokens,
+                AiTotalTokens = aiTotalTokens,
+                AiGenerationTimeMs = aiGenerationTimeMs
             };
 
             foreach (var check in result.Checks)
@@ -39,6 +49,7 @@ namespace LabelVerify.Web.Services
                         SourceLabel = check.SourceLabel,
                         Status = check.Status,
                         ConfidenceScore = check.ConfidenceScore,
+                        AiAnalysis = check.AiAnalysis,
                         Notes = check.Notes
                     });
             }

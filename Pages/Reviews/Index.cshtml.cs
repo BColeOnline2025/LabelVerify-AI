@@ -65,8 +65,8 @@ namespace LabelVerify.Web.Pages.Reviews
 
             WorkflowChart = new ChartData
             {
-                Labels = workflowCounts.Keys.ToList(),
-                Values = workflowCounts.Values.ToList()
+                Labels = [.. workflowCounts.Keys],
+                Values = [.. workflowCounts.Values]
             };
 
             MonthlyReviewChart = await _dashboardAnalyticsService.GetMonthlyReviewCountsAsync();

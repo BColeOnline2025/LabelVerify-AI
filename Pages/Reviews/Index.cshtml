@@ -7,8 +7,30 @@
     <div class="alert alert-primary">
         Historical compliance reviews stored in Azure SQL.
     </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Metrics.OperationalInsights))
+    {
+        <div class="card mb-4">
+            <div class="card-header">
+                <strong>AI Operational Insights</strong>
+            </div>
+            <div class="card-body">
+                <div style="white-space: pre-line;">
+                    @Model.Metrics.OperationalInsights
+                </div>
+            </div>
+        </div>
+        <div class="text-muted small mt-3">
+            Generated:
+            @Model.Metrics.OperationalInsightsGeneratedUtc?.ToLocalTime().ToString("g")
+            <br />
+            Model:
+            @Model.Metrics.OperationalInsightsModel
+        </div>
+    }
+
     <div class="row mb-4">
-        <div class="col-md-2">
+        <div class="col-md-3">
             <div class="card h-100 border-primary">
                 <div class="card-body text-center">
                     <h6>Total Reviews</h6>
@@ -16,7 +38,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-2">
+        <div class="col-md-3">
             <div class="card h-100 border-success">
                 <div class="card-body text-center">
                     <h6>Approved</h6>
@@ -24,7 +46,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-2">
+        <div class="col-md-3">
             <div class="card h-100 border-warning">
                 <div class="card-body text-center">
                     <h6>Review</h6>
@@ -32,7 +54,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-2">
+        <div class="col-md-3">
             <div class="card h-100 border-danger">
                 <div class="card-body text-center">
                     <h6>Rejected</h6>
@@ -40,7 +62,70 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-2">
+    </div>
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-info text-center h-100">
+                <div class="card-body">
+                    <h6>Average Review Time</h6>
+                    <h3>@Model.Metrics.AverageReviewHours.ToString("0.0") Hours</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-success text-center h-100">
+                <div class="card-body">
+                    <h6>Fastest Reviewer</h6>
+                    <h5>@Model.Metrics.FastestReviewer</h5>
+                    <div class="text-muted">
+                        @Model.Metrics.FastestReviewerAverageHours.ToString("0.0") Hours Avg
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning text-center h-100">
+                <div class="card-body">
+                    <h6>Oldest Open Review</h6>
+                    <h3>@Model.Metrics.OldestOpenReviewDays Days</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-danger text-center h-100">
+                <div class="card-body">
+                    <h6>Reviews Exceeding SLA</h6>
+                    <h3>@Model.Metrics.ReviewsExceedingSla</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-success text-center h-100">
+                <div class="card-body">
+                    <h6>Approval Rate</h6>
+                    <h3>@Model.Metrics.ApprovalRate.ToString("0.0")%</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning text-center h-100">
+                <div class="card-body">
+                    <h6>Review Rate</h6>
+                    <h3>@Model.Metrics.ReviewRate.ToString("0.0")%</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-danger text-center h-100">
+                <div class="card-body">
+                    <h6>Rejection Rate</h6>
+                    <h3>@Model.Metrics.RejectionRate.ToString("0.0")%</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
             <div class="card border-warning text-center">
                 <div class="card-body">
                     <h6>Over 7 Days</h6>
@@ -48,11 +133,21 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-2">
+    </div>
+    <div class="row mb-4">
+        <div class="col-md-3">
             <div class="card border-danger text-center">
                 <div class="card-body">
                     <h6>Over 14 Days</h6>
                     <h3>@Model.Metrics.AgingOver14Days</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info text-center h-100">
+                <div class="card-body">
+                    <h6>Average Review Time</h6>
+                    <h3>@Model.Metrics.AverageReviewHours.ToString("0.0") Hours</h3>
                 </div>
             </div>
         </div>
@@ -71,6 +166,48 @@
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <a asp-page="./Index" asp-route-AssignedReviewer="Brian Cole" asp-route-WorkflowStatus="Assigned" class="text-decoration-none">
+                <div class="card border-primary text-center h-100">
+                    <div class="card-body">
+                        <h6>My Assigned</h6>
+                        <h3>@Model.Metrics.MyAssigned</h3>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a asp-page="./Index" asp-route-AssignedReviewer="Brian Cole" asp-route-WorkflowStatus="In Review" class="text-decoration-none">
+                <div class="card border-warning text-center h-100">
+                    <div class="card-body">
+                        <h6>My In Review</h6>
+                        <h3>@Model.Metrics.MyInReview</h3>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a asp-page="./Index" asp-route-AssignedReviewer="Brian Cole" asp-route-FinalDisposition="Approve" class="text-decoration-none">
+                <div class="card border-success text-center h-100">
+                    <div class="card-body">
+                        <h6>My Completed</h6>
+                        <h3>@Model.Metrics.MyCompleted</h3>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a asp-page="./Index" asp-route-AssignedReviewer="Unassigned" asp-route-WorkflowStatus="Submitted" class="text-decoration-none">
+                <div class="card border-secondary text-center h-100">
+                    <div class="card-body">
+                        <h6>Unassigned</h6>
+                        <h3>@Model.Metrics.Unassigned</h3>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
     <div class="row mb-4">
         <div class="col-md-3">
             <div class="card h-100">

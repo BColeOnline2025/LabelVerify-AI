@@ -55,8 +55,10 @@ namespace LabelVerify.Web.Pages.Reviews
             if (Review.WorkflowStatus == "Assigned")
             {
                 await _reviewQueryService.SaveWorkflowStatusAsync(Review.Id, "In Review");
+                await _reviewQueryService.SetReviewStartedAsync(Review.Id);
 
                 Review.WorkflowStatus = "In Review";
+                Review.ReviewStartedUtc = DateTime.UtcNow;
 
                 await _auditLogService.LogAsync(Review.Id, "WorkflowStatusChanged", "Status changed from Assigned to In Review");
             }
@@ -113,6 +115,7 @@ namespace LabelVerify.Web.Pages.Reviews
                 ReviewDate = review.ReviewDateUtc,
                 Recommendation = review.Recommendation,
                 OverallScore = review.OverallScore,
+                AiComplianceSummary = review.AiComplianceSummary,
                 ApprovedProfile = approved,
                 ProductionFacts = production,
                 VerificationResult = new VerificationResult
@@ -230,11 +233,8 @@ namespace LabelVerify.Web.Pages.Reviews
 
         public async Task<IActionResult> OnPostDispositionAsync(Guid id)
         {
-            await _reviewQueryService.UpdateDispositionAsync(id, ReviewerName,
-                FinalDisposition, ReviewerNotes);
-
-            await _auditLogService.LogAsync(id, "DispositionUpdated",
-                $"Disposition set to {FinalDisposition} by {ReviewerName}");
+            await _reviewQueryService.UpdateDispositionAsync(id, ReviewerName, FinalDisposition, ReviewerNotes);
+            await _auditLogService.LogAsync(id, "DispositionUpdated", $"Disposition set to {FinalDisposition} by {ReviewerName}");
 
             return RedirectToPage(new { id });
         }

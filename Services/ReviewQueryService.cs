@@ -4,9 +4,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LabelVerify.Web.Services
 {
-    public class ReviewQueryService(ApplicationDbContext db)
+    public class ReviewQueryService(ApplicationDbContext db, AzureOpenAiSummaryService azureOpenAiSummaryService)
     {
         private readonly ApplicationDbContext _db = db;
+        private readonly AzureOpenAiSummaryService _azureOpenAiSummaryService = azureOpenAiSummaryService;
 
         public async Task<List<ReviewSession>> GetRecentAsync(int count = 100)
         {
@@ -89,8 +90,61 @@ namespace LabelVerify.Web.Services
 
         public async Task<ReviewDashboardMetrics> GetMetricsAsync()
         {
-            var reviews = await _db.ReviewSessions.ToListAsync();
             var now = DateTime.UtcNow;
+            var slaDays = 7;
+            var currentReviewer = "Brian Cole";
+            var reviews = await _db.ReviewSessions.ToListAsync();
+            var completedReviews = reviews.Where(x => x.ReviewStartedUtc != null && x.CompletedUtc != null).ToList();
+            var completedWithTimes = reviews.Where(x => x.ReviewStartedUtc.HasValue && x.CompletedUtc.HasValue).ToList();
+            var averageReviewHours = completedWithTimes.Count != 0 ? completedWithTimes.Average(x => (x.CompletedUtc!.Value - x.ReviewStartedUtc!.Value).TotalHours) : 0;
+            var fastestReviewer = completedWithTimes.Where(x => !string.IsNullOrWhiteSpace(x.ReviewerName))
+                .GroupBy(x => x.ReviewerName).Select(g => new
+                {
+                    Reviewer = g.Key!,
+                    AvgHours = g.Average(x =>
+                        (x.CompletedUtc!.Value - x.ReviewStartedUtc!.Value).TotalHours)
+                })
+                .OrderBy(x => x.AvgHours)
+                .FirstOrDefault();
+            var openReviews = reviews.Where(x => x.WorkflowStatus != "Approved" && x.WorkflowStatus != "Rejected").ToList();
+            var oldestOpenReviewDays = openReviews.Count != 0 ? openReviews.Max(x => (now - x.ReviewDateUtc).Days) : 0;
+            var reviewsExceedingSla = openReviews.Count(x => (now - x.ReviewDateUtc).Days > slaDays);
+            var completedDispositionReviews = reviews.Where(x => x.CompletedUtc.HasValue && !string.IsNullOrWhiteSpace(x.FinalDisposition)).ToList();
+            var approvalRate = completedDispositionReviews.Count != 0 ? completedDispositionReviews.Count(x => x.FinalDisposition == "Approve") * 100.0 / completedDispositionReviews.Count : 0;
+            var reviewRate = completedDispositionReviews.Count != 0 ? completedDispositionReviews.Count(x => x.FinalDisposition == "Review") * 100.0 / completedDispositionReviews.Count : 0;
+            var rejectionRate = completedDispositionReviews.Count != 0 ? completedDispositionReviews.Count(x => x.FinalDisposition == "Reject") * 100.0 / completedDispositionReviews.Count : 0;
+            var myAssigned = reviews.Count(x => x.AssignedReviewer == currentReviewer && x.WorkflowStatus == "Assigned");
+            var myInReview = reviews.Count(x => x.AssignedReviewer == currentReviewer && x.WorkflowStatus == "In Review");
+            var myCompleted = reviews.Count(x => x.AssignedReviewer == currentReviewer && x.CompletedUtc.HasValue);
+            var unassigned = reviews.Count(x => string.IsNullOrWhiteSpace(x.AssignedReviewer) && x.WorkflowStatus == "Submitted");
+
+            var insightsPayload = new
+            {
+                TotalReviews = reviews.Count,
+                AverageReviewHours = averageReviewHours,
+                ApprovalRate = approvalRate,
+                ReviewRate = reviewRate,
+                RejectionRate = rejectionRate,
+                FastestReviewer = fastestReviewer?.Reviewer,
+                FastestReviewerAverageHours = fastestReviewer?.AvgHours,
+                OldestOpenReviewDays = oldestOpenReviewDays,
+                ReviewsExceedingSla = reviewsExceedingSla,
+                myAssigned,
+                myInReview,
+                myCompleted,
+                unassigned
+            };
+
+            string? operationalInsights = null;
+
+            try
+            {
+                operationalInsights = await _azureOpenAiSummaryService.GenerateOperationalInsightsAsync(insightsPayload);
+            }
+            catch
+            {
+                operationalInsights = "Operational insights unavailable.";
+            }
 
             return new ReviewDashboardMetrics
             {
@@ -108,6 +162,21 @@ namespace LabelVerify.Web.Services
                     x.WorkflowStatus != "Approved" && x.WorkflowStatus != "Rejected"),
                 AgingOver14Days = reviews.Count(x => (now - x.ReviewDateUtc).Days > 14 &&
                     x.WorkflowStatus != "Approved" && x.WorkflowStatus != "Rejected"),
+                MyAssigned = reviews.Count(x => x.AssignedReviewer == currentReviewer && x.WorkflowStatus == "Assigned"),
+                MyInReview = reviews.Count(x => x.AssignedReviewer == currentReviewer && x.WorkflowStatus == "In Review"),
+                MyCompleted = reviews.Count(x => x.AssignedReviewer == currentReviewer && x.CompletedUtc != null),
+                Unassigned = reviews.Count(x => string.IsNullOrWhiteSpace(x.AssignedReviewer) && x.WorkflowStatus == "Submitted"),
+                FastestReviewer = fastestReviewer?.Reviewer ?? "N/A",
+                FastestReviewerAverageHours = fastestReviewer?.AvgHours ?? 0,
+                OldestOpenReviewDays = oldestOpenReviewDays,
+                ReviewsExceedingSla = reviewsExceedingSla,
+                ApprovalRate = approvalRate,
+                ReviewRate = reviewRate,
+                RejectionRate = rejectionRate,
+                OperationalInsights = operationalInsights,
+                AverageReviewHours = averageReviewHours,
+                OperationalInsightsGeneratedUtc = DateTime.UtcNow,
+                OperationalInsightsModel = _azureOpenAiSummaryService.ModelName
             };
         }
 
@@ -191,7 +260,13 @@ namespace LabelVerify.Web.Services
             review.ReviewerNotes = notes;
             review.FinalDisposition = disposition;
             review.DispositionDateUtc = DateTime.UtcNow;
-            review.WorkflowStatus = disposition == "Approve" ? "Approved" : "Rejected";
+            review.CompletedUtc = DateTime.UtcNow;
+            review.WorkflowStatus = disposition switch
+                {
+                    "Approve" => "Approved",
+                    "Reject" => "Rejected",
+                    _ => "In Review"
+                };
 
             await _db.SaveChangesAsync();
         }
@@ -221,6 +296,7 @@ namespace LabelVerify.Web.Services
 
             review.AssignedReviewer = reviewer;
             review.AssignedDateUtc = DateTime.UtcNow;
+            review.AssignedUtc = DateTime.UtcNow;
 
             if (review.WorkflowStatus == "Submitted")
             {
@@ -235,15 +311,25 @@ namespace LabelVerify.Web.Services
             return new ReviewDashboardMetrics
             {
                 Submitted = await _db.ReviewSessions.CountAsync(x => x.WorkflowStatus == "Submitted"),
-
                 Assigned = await _db.ReviewSessions.CountAsync(x => x.WorkflowStatus == "Assigned"),
-
                 InReview = await _db.ReviewSessions.CountAsync(x => x.WorkflowStatus == "In Review"),
-
                 Approved = await _db.ReviewSessions.CountAsync(x => x.WorkflowStatus == "Approved"),
-
                 Rejected = await _db.ReviewSessions.CountAsync(x => x.WorkflowStatus == "Rejected")
             };
+        }
+
+        public async Task SetReviewStartedAsync(Guid reviewId)
+        {
+            var review = await _db.ReviewSessions.FirstOrDefaultAsync(x => x.Id == reviewId);
+
+            if (review == null)
+            {
+                return;
+            }
+
+            review.ReviewStartedUtc ??= DateTime.UtcNow;
+
+            await _db.SaveChangesAsync();
         }
     }
 }
