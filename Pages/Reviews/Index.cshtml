@@ -2,6 +2,7 @@
 @model LabelVerify.Web.Pages.Reviews.IndexModel
 @using System.Text.Json
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <div class="container mt-4">
     <h2>Review History</h2>
     <div class="alert alert-primary">
@@ -26,9 +27,71 @@
             <br />
             Model:
             @Model.Metrics.OperationalInsightsModel
-        </div>
+        </div><br />
     }
 
+    <div class="alert alert-info">
+        Leaderboard Count: @Model.Metrics.ReviewerLeaderboard.Count
+    </div>
+    <div class="row mb-4">
+        <div class="col-md-7">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <strong>Reviewer Productivity Leaderboard</strong>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Reviewer</th>
+                                <th>Completed</th>
+                                <th>Avg Hours</th>
+                                <th>Approval %</th>
+                                <th>Review %</th>
+                                <th>Reject %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.Metrics.ReviewerLeaderboard.Any())
+                            {
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">
+                                        No completed reviewer activity found.
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var reviewer in Model.Metrics.ReviewerLeaderboard)
+                                {
+                                    <tr>
+                                        <td>@reviewer.ReviewerName</td>
+                                        <td>@reviewer.ReviewsCompleted</td>
+                                        <td>@reviewer.AverageReviewHours.ToString("0.0")</td>
+                                        <td>@reviewer.ApprovalRate.ToString("0.0")%</td>
+                                        <td>@reviewer.ReviewRate.ToString("0.0")%</td>
+                                        <td>@reviewer.RejectionRate.ToString("0.0")%</td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <strong>Reviewer Productivity Chart</strong>
+                </div>
+                <div class="card-body">
+                    <div style="height:300px;">
+                        <canvas id="reviewerProductivityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="row mb-4">
         <div class="col-md-3">
             <div class="card h-100 border-primary">
@@ -165,7 +228,6 @@
             }
         </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <div class="row mb-4">
         <div class="col-md-3">
             <a asp-page="./Index" asp-route-AssignedReviewer="Brian Cole" asp-route-WorkflowStatus="Assigned" class="text-decoration-none">
@@ -670,5 +732,31 @@
                 }
             }
         });
+
+        const reviewerProductivityElement = document.getElementById('reviewerProductivityChart');
+
+        if (reviewerProductivityElement) {
+            new Chart(reviewerProductivityElement, {
+                type: 'bar',
+                data: {
+                labels:
+                @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ReviewerProductivityChart.Labels)),
+                datasets: [{
+                    label: 'Completed Reviews',
+                    data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ReviewerProductivityChart.Values))
+                }]
+            },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                        display: false
+                        }
+                    }
+                }
+            });
+        }
     </script>
 }

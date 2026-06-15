@@ -1,4 +1,6 @@
-﻿namespace LabelVerify.Web.Models
+﻿using LabelVerify.Web.ViewModels;
+
+namespace LabelVerify.Web.Models
 {
     public class ReviewDashboardMetrics
     {
@@ -29,5 +31,6 @@
         public string? OperationalInsights { get; set; }
         public DateTime? OperationalInsightsGeneratedUtc { get; set; }
         public string? OperationalInsightsModel { get; set; }
+        public List<ReviewerProductivityMetric> ReviewerLeaderboard { get; set; } = [];
     }
 }

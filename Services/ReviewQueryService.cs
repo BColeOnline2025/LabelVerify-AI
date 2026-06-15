@@ -1,5 +1,6 @@
 ﻿using LabelVerify.Web.Data;
 using LabelVerify.Web.Models;
+using LabelVerify.Web.ViewModels;
 using Microsoft.EntityFrameworkCore;
 
 namespace LabelVerify.Web.Services
@@ -118,6 +119,57 @@ namespace LabelVerify.Web.Services
             var myCompleted = reviews.Count(x => x.AssignedReviewer == currentReviewer && x.CompletedUtc.HasValue);
             var unassigned = reviews.Count(x => string.IsNullOrWhiteSpace(x.AssignedReviewer) && x.WorkflowStatus == "Submitted");
 
+            var completedDebug = reviews
+                .Select(x => new
+                {
+                    x.AssignedReviewer,
+                    x.ReviewerName,
+                    x.WorkflowStatus,
+                    x.FinalDisposition,
+                    x.CompletedUtc
+                })
+                .ToList();
+            
+            var reviewerLeaderboard = reviews
+                .Where(x =>
+                    (x.WorkflowStatus == "Approved" ||
+                     x.WorkflowStatus == "Rejected" ||
+                     !string.IsNullOrWhiteSpace(x.FinalDisposition)) &&
+                    (!string.IsNullOrWhiteSpace(x.AssignedReviewer) ||
+                     !string.IsNullOrWhiteSpace(x.ReviewerName)))
+                .GroupBy(x =>
+                    !string.IsNullOrWhiteSpace(x.AssignedReviewer)
+                        ? x.AssignedReviewer!
+                        : x.ReviewerName!)
+                .Select(g => new ReviewerProductivityMetric
+                {
+                    ReviewerName = g.Key,
+
+                    ReviewsCompleted = g.Count(),
+
+                    AverageReviewHours =
+                        g.Any(x => x.ReviewStartedUtc.HasValue && x.CompletedUtc.HasValue)
+                            ? g.Where(x => x.ReviewStartedUtc.HasValue && x.CompletedUtc.HasValue)
+                               .Average(x =>
+                                   (x.CompletedUtc!.Value -
+                                    x.ReviewStartedUtc!.Value).TotalHours)
+                            : 0,
+
+                    ApprovalRate =
+                        g.Count(x => x.FinalDisposition == "Approve")
+                        * 100.0 / g.Count(),
+
+                    ReviewRate =
+                        g.Count(x => x.FinalDisposition == "Review")
+                        * 100.0 / g.Count(),
+
+                    RejectionRate =
+                        g.Count(x => x.FinalDisposition == "Reject")
+                        * 100.0 / g.Count()
+                })
+                .OrderByDescending(x => x.ReviewsCompleted)
+                .ToList();
+
             var insightsPayload = new
             {
                 TotalReviews = reviews.Count,
@@ -176,7 +228,8 @@ namespace LabelVerify.Web.Services
                 OperationalInsights = operationalInsights,
                 AverageReviewHours = averageReviewHours,
                 OperationalInsightsGeneratedUtc = DateTime.UtcNow,
-                OperationalInsightsModel = _azureOpenAiSummaryService.ModelName
+                OperationalInsightsModel = _azureOpenAiSummaryService.ModelName,
+                ReviewerLeaderboard = reviewerLeaderboard
             };
         }
 

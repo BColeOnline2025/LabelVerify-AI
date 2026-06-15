@@ -60,6 +60,11 @@ namespace LabelVerify.Web.Pages.Reviews
             TotalRecords = result.TotalRecords; 
             Metrics = await _reviewQueryService.GetMetricsAsync();
             TopFailures = await _reviewQueryService.GetTopFailureReasonsAsync();
+            ReviewerProductivityChart = new ChartData
+            {
+                Labels = [.. Metrics.ReviewerLeaderboard.Select(x => x.ReviewerName)],
+                Values = [.. Metrics.ReviewerLeaderboard.Select(x => x.ReviewsCompleted)]
+            };
 
             var workflowCounts = await _dashboardAnalyticsService.GetWorkflowStatusCountsAsync();
 
