@@ -323,8 +323,16 @@
                     <div class="row">
                         <div class="col-md-3">
                             <label class="form-label">Reviewer</label>
-                            <input asp-for="ReviewerName" class="form-control" />
-                        </div>
+                            @if (User.IsInRole("Supervisor"))
+                                {
+                                    <select asp-for="ReviewerName" asp-items="Model.ReviewerOptions" class="form-select">
+                                    </select>
+                                }
+                                else
+                                {
+                                    <input asp-for="ReviewerName" class="form-control" readonly />
+                                }
+                            </div>
                         <div class="col-md-3">
                             <label class="form-label">Final Disposition</label>
                             <select asp-for="FinalDisposition" class="form-select">

@@ -1,6 +1,7 @@
 ﻿@using Microsoft.Extensions.Options
 @using LabelVerify.Web.Options
 @inject IOptions<ApplicationOptions> AppOptions
+@inject LabelVerify.Web.Services.ReviewBatchService ReviewBatchService
 
 <!DOCTYPE html>
 <html lang="en">
@@ -22,22 +23,38 @@
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
+
+                @{var currentUser = User.Identity?.Name;
+
+                    var myQueueCount = User.Identity?.IsAuthenticated == true ? (await ReviewBatchService
+                        .GetAssignedPackagesAsync(currentUser!)).Count : 0;
+                }
+
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Reviews/Dashboard">Dashboard</a>
+                            <a class="nav-link text-dark" asp-page="/Reviews/Dashboard">Dashboard</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-page="/ColaReview">New Review</a>
+                            <a class="nav-link text-dark" asp-page="/Reviews/MyWorkQueue">
+                                My&nbsp;Work&nbsp;Queue&nbsp;
+                                @if (myQueueCount > 0)
+                                {
+                                    <span class="badge bg-danger">@myQueueCount</span>
+                                }
+                            </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-page="/Reviews/WorkQueue">Work Queue</a>
+                            <a class="nav-link text-dark" asp-page="/ColaReview">New&nbsp;Review</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-page="/Reviews/Index">Review History</a>
+                            <a class="nav-link text-dark" asp-page="/Reviews/BatchCreate">New&nbsp;Batch&nbsp;Review</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
+                            <a class="nav-link text-dark" asp-page="/Reviews/Batches">Review&nbsp;Batches</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-page="/Reviews/Index">Review&nbsp;History</a>
                         </li>
                     </ul>
                 </div>

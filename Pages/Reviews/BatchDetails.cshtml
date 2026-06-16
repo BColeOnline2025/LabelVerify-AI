@@ -1,0 +1,140 @@
+﻿@page "{id:guid}"
+@model LabelVerify.Web.Pages.Reviews.BatchDetailsModel
+
+<h2>@Model.Batch?.BatchName</h2>
+<div class="card">
+    <div class="card-header">Review Batch</div>
+    <div class="card-body">
+        @{
+            var total = Model.Batch!.Packages.Count;
+            var completed = Model.Batch.Packages.Count(x => x.Status == "Completed");
+            var percent = total == 0 ? 0 : (completed * 100) / total;
+        }
+
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6>Total Packages</h6>
+                        <h2>@total</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6>Completed</h6>
+                        <h2>@completed</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6>Pending</h6>
+                        <h2>@(total - completed)</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6>Status</h6>
+                        <h4>@Model.Batch.Status</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card mb-4">
+            <div class="card-header">
+                <strong>Batch Progress</strong>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    Completed @completed of @total Packages
+                </div>
+                <div class="progress">
+                    <div class="progress-bar"
+                         role="progressbar"
+                         style="width:@percent%">
+                        @percent%
+                    </div>
+                </div>
+            </div>
+        </div>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>COLA Package</th>
+                    <th>Status</th>
+                    <th>Uploaded</th>
+                    <th>Completed</th>
+                    <th>Reviewer</th>
+                    <th>Assign</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var package in Model.Batch!.Packages)
+                {
+                    <tr>
+                        <td>@package.ColaPackageFileName</td>
+                        <td>
+                            @if (package.Status == "Completed")
+                            {
+                                <span class="badge bg-success">Completed</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning text-dark">Pending</span>
+                            }
+                        </td>
+                        <td>@package.UploadedUtc.ToLocalTime()</td>
+                        <td>@(package.CompletedUtc?.ToLocalTime().ToString("g") ?? "-")</td>
+                        <td>
+                            @(string.IsNullOrWhiteSpace(package.AssignedReviewer)
+                                ? "Unassigned"
+                                : package.AssignedReviewer)
+                        </td>
+                        <td>
+                            @if (package.Status != "Completed")
+                            {
+                                <form method="post" asp-page-handler="Assign">
+                                    <input type="hidden" name="id" value="@Model.Batch!.Id" />
+                                    <input type="hidden" name="packageId" value="@package.Id" />
+                                    <div class="input-group">
+                                        <select name="reviewer" class="form-select form-select-sm">
+                                            <option value="">
+                                                Select Reviewer
+                                            </option>
+
+                                            @foreach (var reviewer in Model.ReviewerOptions)
+                                            {
+                                                <option value="@reviewer.Value">
+                                                    @reviewer.Text
+                                                </option>
+                                            }
+                                        </select>
+                                        <button type="submit" class="btn btn-sm btn-primary">
+                                            Assign
+                                        </button>
+                                    </div>
+                                </form>
+                            }
+                        </td>
+                        <td>
+                            @if (package.Status == "Completed")
+                            {
+                                <a asp-page="/Reviews/Details" asp-route-id="@package.ReviewSessionId" asp-route-returnBatchId="@Model.Batch!.Id" class="btn btn-sm btn-outline-success">View Review</a>
+                            }
+                            else
+                            {
+                                <a asp-page="/Reviews/BatchPackage" asp-route-packageId="@package.Id" class="btn btn-sm btn-primary">Process</a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

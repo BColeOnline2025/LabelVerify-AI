@@ -9,5 +9,7 @@ namespace LabelVerify.Web.Data
         public DbSet<ReviewSession> ReviewSessions => Set<ReviewSession>();
         public DbSet<ReviewResultEntity> ReviewResults => Set<ReviewResultEntity>();
         public DbSet<ReviewAuditLog> ReviewAuditLogs => Set<ReviewAuditLog>();
+        public DbSet<ReviewBatch> ReviewBatches => Set<ReviewBatch>();
+        public DbSet<ReviewBatchPackage> ReviewBatchPackages => Set<ReviewBatchPackage>();
     }
 }

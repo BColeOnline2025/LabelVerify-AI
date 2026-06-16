@@ -42,6 +42,48 @@ namespace LabelVerify.Web.Services
             };
         }
 
+        public async Task<MemoryStream> DownloadAsync(string containerName, string blobName)
+        {
+            if (string.IsNullOrWhiteSpace(_options.ConnectionString))
+            {
+                throw new InvalidOperationException("Azure Blob Storage is not configured.");
+            }
+
+            var containerClient = new BlobContainerClient(_options.ConnectionString, containerName);
+
+            var blobClient = containerClient.GetBlobClient(blobName);
+
+            if (!await blobClient.ExistsAsync())
+            {
+                throw new FileNotFoundException($"Blob not found: {containerName}/{blobName}");
+            }
+
+            var stream = new MemoryStream();
+
+            await blobClient.DownloadToAsync(stream);
+
+            stream.Position = 0;
+
+            return stream;
+        }
+
+        public async Task<MemoryStream> DownloadAsync(string blobUrl)
+        {
+            var uri = new Uri(blobUrl);
+
+            var pathParts = uri.AbsolutePath.Trim('/').Split('/', 2);
+
+            if (pathParts.Length != 2)
+            {
+                throw new InvalidOperationException($"Invalid blob URL: {blobUrl}");
+            }
+
+            var containerName = pathParts[0];
+            var blobName = Uri.UnescapeDataString(pathParts[1]);
+
+            return await DownloadAsync(containerName, blobName);
+        }
+
         public string GenerateReadSasUrl(string containerName, string blobName, int expirationMinutes = 15)
         {
             var containerClient = new BlobContainerClient(_options.ConnectionString, containerName);

@@ -37,6 +37,9 @@ builder.Services.AddScoped<AzureOpenAiSummaryService>();
 builder.Services.AddScoped<MonthlyComplianceReportService>();
 builder.Services.AddScoped<MonthlyCompliancePdfGenerator>();
 builder.Services.AddScoped<RiskScoringService>();
+builder.Services.AddScoped<ReviewBatchService>();
+builder.Services.AddScoped<ColaReviewOrchestrator>();
+builder.Services.AddScoped<AiReviewEnrichmentService>();
 
 builder.Services.Configure<AzureVisionOptions>(builder.Configuration.GetSection("AzureVision"));
 builder.Services.Configure<ApplicationOptions>(builder.Configuration.GetSection("Application"));

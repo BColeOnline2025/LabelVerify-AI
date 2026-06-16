@@ -1,0 +1,96 @@
+﻿@page
+@model LabelVerify.Web.Pages.Reviews.MyWorkQueueModel
+
+@{
+    ViewData["Title"] = "My Work Queue";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>My Work Queue</h2>
+    <a asp-page="/Reviews/Dashboard" class="btn btn-outline-secondary">Back to Dashboard</a>
+</div>
+<div class="card mb-4">
+    <div class="card-header">
+        <strong>Assigned Reviews</strong>
+    </div>
+    <div class="card-body">
+        @if (!Model.Packages.Any())
+        {
+            <div class="alert alert-success mb-0">
+                No reviews currently assigned.
+            </div>
+        }
+        else
+        {
+            <table class="table table-striped table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Batch</th>
+                        <th>COLA Package</th>
+                        <th>Status</th>
+                        <th>Assigned</th>
+                        <th>Days Open</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var package in Model.Packages)
+                    {
+                        var daysOpen = (DateTime.UtcNow - package.UploadedUtc).Days;
+                        <tr>
+                            <td>@package.ReviewBatch?.BatchName</td>
+                            <td>@package.ColaPackageFileName</td>
+                            <td>
+                                @if (package.Status == "Assigned")
+                                {
+                                    <span class="badge bg-primary">Assigned</span>
+                                }
+                                else if (package.Status == "In Review")
+                                {
+                                    <span class="badge bg-warning text-dark">In Review</span>
+                                }
+                                else if (package.Status == "Completed")
+                                {
+                                    <span class="badge bg-success">Completed</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">@package.Status</span>
+                                }
+                            </td>
+                            <td>@(package.AssignedUtc?.ToLocalTime().ToString("g") ?? "-")</td>
+                            <td>
+                                @if (daysOpen > 14)
+                                {
+                                    <span class="badge bg-danger">@daysOpen</span>
+                                }
+                                else if (daysOpen > 7)
+                                {
+                                    <span class="badge bg-warning text-dark">@daysOpen</span>
+                                }
+                                else
+                                {
+                                    @daysOpen
+                                }
+                            </td>
+                            <td>
+                                @if (package.Status == "Completed")
+                                {
+                                    <a asp-page="/Reviews/Details" asp-route-id="@package.ReviewSessionId" asp-route-returnBatchId="@package.ReviewBatchId" class="btn btn-sm btn-outline-success">
+                                        View Review
+                                    </a>
+                                }
+                                else
+                                {
+                                    <a asp-page="/Reviews/BatchPackage" asp-route-packageId="@package.Id" class="btn btn-sm btn-primary">
+                                        Process
+                                    </a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>

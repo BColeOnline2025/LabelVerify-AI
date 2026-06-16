@@ -1,0 +1,36 @@
+﻿@page
+@model LabelVerify.Web.Pages.Reviews.BatchCreateModel
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Create Review Batch</h2>
+        <a asp-page="/Reviews/Dashboard" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <strong>Upload COLA Packages</strong>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                <div class="alert alert-info">
+                    Upload one or more COLA package PDFs. Production labels will be uploaded later when each package 
+                    is processed.  Files must be PDFs and be located in the same folder in order to choose multiple files.
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Batch Name</label>
+                    <input asp-for="BatchName" class="form-control" />
+                    <span asp-validation-for="BatchName" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">COLA Package PDFs</label>
+                    <input asp-for="ColaPackages" type="file" multiple accept=".pdf" class="form-control" />
+                    <span asp-validation-for="ColaPackages" class="text-danger"></span>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    Create Batch
+                </button>
+            </form>
+        </div>
+    </div>
+</div>

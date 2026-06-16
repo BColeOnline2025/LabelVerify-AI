@@ -54,10 +54,8 @@
                 </div>
                 <div class="col-md-2">
                     <label>Assigned To</label>
-                    <select asp-for="AssignedReviewer" class="form-select">
-                        <option value="">All</option>
-                        <option>Unassigned</option>
-                        <option>Brian Cole</option>
+                    <select asp-for="AssignedReviewer" asp-items="Model.ReviewerOptions" class="form-select">
+                        <option value="">All Reviewers</option>
                     </select>
                 </div>
                 <div class="col-md-2">

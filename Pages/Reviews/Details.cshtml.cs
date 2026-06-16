@@ -34,6 +34,8 @@ namespace LabelVerify.Web.Pages.Reviews
         public string? FinalDisposition { get; set; } = string.Empty;
         [BindProperty]
         public string AssignedReviewer { get; set; } = "";
+        [BindProperty(SupportsGet = true)]
+        public Guid? ReturnBatchId { get; set; }
 
         public async Task<IActionResult> OnGetAsync(Guid id)
         {

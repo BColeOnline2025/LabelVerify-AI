@@ -1,0 +1,34 @@
+﻿@page "{packageId:guid}"
+@model LabelVerify.Web.Pages.Reviews.BatchPackageModel
+
+<h2>Process Batch Package</h2>
+<div class="card mb-4">
+    <div class="card-header">COLA Package</div>
+    <div class="card-body">
+        <div>
+            <strong>File:</strong>
+            @Model.Package?.ColaPackageFileName
+        </div>
+        <div>
+            <strong>Status:</strong>
+            @Model.Package?.Status
+        </div>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header">Upload Production Labels</div>
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data" asp-route-packageId="@Model.Package?.Id">
+            <div class="alert alert-info">
+                Files must be either .jpg, .jpeg, .png, .bmp, .tif, .tiff or .heif and be located in the 
+                same folder in order to choose multiple files.
+            </div>
+            <input type="hidden" name="packageId" value="@Model.Package?.Id" />
+            <div class="mb-3">
+                <label class="form-label">Production Labels</label>
+                <input asp-for="ProductionLabels" type="file" multiple accept=".jpg,.jpeg,.png,.bmp,.tif,.tiff,.heif" class="form-control" />
+            </div>
+            <button type="submit" class="btn btn-primary">Start Review</button>
+        </form>
+    </div>
+</div>

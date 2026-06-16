@@ -2,12 +2,15 @@ using LabelVerify.Web.Models;
 using LabelVerify.Web.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace LabelVerify.Web.Pages.Reviews
 {
-    public class IndexModel(ReviewQueryService reviewQueryService) : PageModel
+    public class IndexModel(ReviewQueryService reviewQueryService, UserManager<ApplicationUser> userManager) : PageModel
     {
         private readonly ReviewQueryService _reviewQueryService = reviewQueryService;
+        private readonly UserManager<ApplicationUser> _userManager = userManager;
 
         public string? ColaPackageFileName { get; set; }
         [BindProperty(SupportsGet = true)]
@@ -32,6 +35,7 @@ namespace LabelVerify.Web.Pages.Reviews
         public string? AssignedReviewer { get; set; }
         [BindProperty(SupportsGet = true)]
         public string? FinalDisposition { get; set; }
+        public List<SelectListItem> ReviewerOptions { get; set; } = [];
 
         public async Task OnGetAsync()
         {
@@ -52,7 +56,21 @@ namespace LabelVerify.Web.Pages.Reviews
 
             Metrics = await _reviewQueryService.GetMetricsAsync(currentUser);
             Reviews = result.Items;
-            TotalRecords = result.TotalRecords; 
+            TotalRecords = result.TotalRecords;
+
+            ReviewerOptions = [.. _userManager.Users
+                .OrderBy(x => x.DisplayName)
+                .ThenBy(x => x.Email)
+                .Select(x => new SelectListItem
+                {
+                    Value = !string.IsNullOrWhiteSpace(x.DisplayName)
+                        ? x.DisplayName
+                        : x.Email,
+
+                    Text = !string.IsNullOrWhiteSpace(x.DisplayName)
+                        ? $"{x.DisplayName} ({x.Email})"
+                        : x.Email
+                })];
         }
     }
 }

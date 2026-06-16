@@ -114,9 +114,15 @@ namespace LabelVerify.Web.Services
             var approvalRate = completedDispositionReviews.Count != 0 ? completedDispositionReviews.Count(x => x.FinalDisposition == "Approve") * 100.0 / completedDispositionReviews.Count : 0;
             var reviewRate = completedDispositionReviews.Count != 0 ? completedDispositionReviews.Count(x => x.FinalDisposition == "Review") * 100.0 / completedDispositionReviews.Count : 0;
             var rejectionRate = completedDispositionReviews.Count != 0 ? completedDispositionReviews.Count(x => x.FinalDisposition == "Reject") * 100.0 / completedDispositionReviews.Count : 0;
-            var myAssigned = reviews.Count(x => x.AssignedReviewer == currentReviewer && x.WorkflowStatus == "Assigned");
-            var myInReview = reviews.Count(x => x.AssignedReviewer == currentReviewer && x.WorkflowStatus == "In Review");
-            var myCompleted = reviews.Count(x => x.AssignedReviewer == currentReviewer && x.CompletedUtc.HasValue);
+            var myAssignedReviewSessions = reviews.Count(x => x.AssignedReviewer == currentReviewer && x.WorkflowStatus == "Assigned");
+            var myInReviewSessions = reviews.Count(x => x.AssignedReviewer == currentReviewer && x.WorkflowStatus == "In Review");
+            var myCompletedReviewSessions = reviews.Count(x => x.AssignedReviewer == currentReviewer && x.CompletedUtc.HasValue);
+            var myAssignedBatchPackages = await _db.ReviewBatchPackages.CountAsync(x => x.AssignedReviewer == currentUser && x.Status == "Assigned");
+            var myInReviewBatchPackages = await _db.ReviewBatchPackages.CountAsync(x => x.AssignedReviewer == currentUser && x.Status == "In Review");
+            var myCompletedBatchPackages = await _db.ReviewBatchPackages.CountAsync(x => x.AssignedReviewer == currentUser && x.Status == "Completed");
+            var myAssigned = myAssignedReviewSessions + myAssignedBatchPackages;
+            var myInReview = myInReviewSessions + myInReviewBatchPackages;
+            var myCompleted = myCompletedReviewSessions + myCompletedBatchPackages;
             var unassigned = reviews.Count(x => string.IsNullOrWhiteSpace(x.AssignedReviewer) && x.WorkflowStatus == "Submitted");
             var reviewerLeaderboard = reviews.Where(x =>
                     (x.WorkflowStatus == "Approved" || x.WorkflowStatus == "Rejected" ||
@@ -278,9 +284,9 @@ namespace LabelVerify.Web.Services
                     x.WorkflowStatus != "Approved" && x.WorkflowStatus != "Rejected"),
                 AgingOver14Days = reviews.Count(x => (now - x.ReviewDateUtc).Days > 14 &&
                     x.WorkflowStatus != "Approved" && x.WorkflowStatus != "Rejected"),
-                MyAssigned = reviews.Count(x => x.AssignedReviewer == currentReviewer && x.WorkflowStatus == "Assigned"),
-                MyInReview = reviews.Count(x => x.AssignedReviewer == currentReviewer && x.WorkflowStatus == "In Review"),
-                MyCompleted = reviews.Count(x => x.AssignedReviewer == currentReviewer && x.CompletedUtc != null),
+                MyAssigned = myAssigned,
+                MyInReview = myInReview,
+                MyCompleted = myCompleted,
                 Unassigned = reviews.Count(x => string.IsNullOrWhiteSpace(x.AssignedReviewer) && x.WorkflowStatus == "Submitted"),
                 FastestReviewer = fastestReviewer?.Reviewer ?? "N/A",
                 FastestReviewerAverageHours = fastestReviewer?.AvgHours ?? 0,

@@ -40,5 +40,6 @@
         public string? RiskFactors { get; set; }
         public string? AiRiskAssessment { get; set; }
         public string? BrandName { get; set; }
+        public string? VerificationResultJson { get; set; }
     }
 }

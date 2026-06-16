@@ -15,7 +15,16 @@
             <a asp-page-handler="ExportPdf" asp-route-id="@Model.Review.Id" class="btn btn-success">Export PDF</a>
             <a asp-page-handler="ExportCsv" asp-route-id="@Model.Review.Id" class="btn btn-success">Export CSV</a>
             <a asp-page-handler="ExportZip" asp-route-id="@Model.Review.Id" class="btn btn-success">Export ZIP</a>
-            <a asp-page="./Index" class="btn btn-secondary">← Back to Review History</a>
+            @if (Model.ReturnBatchId.HasValue)
+            {
+                <a asp-page="/Reviews/BatchDetails" asp-route-id="@Model.ReturnBatchId" class="btn btn-secondary">
+                    ← Back to Batch
+                </a>
+            }
+            else
+            {
+                <a asp-page="./Index" class="btn btn-secondary">← Back to Review History</a>
+            }
         </div>
         <div class="row mb-4">
             <div class="col-md-4">

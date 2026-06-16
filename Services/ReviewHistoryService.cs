@@ -9,7 +9,7 @@ namespace LabelVerify.Web.Services
         private readonly ApplicationDbContext _db = db;
 
         public async Task<Guid> SaveAsync(Guid reviewId, ApprovedProductProfile approved, LabelFacts production,
-            VerificationResult result, string colaPackageFileName, IEnumerable<string> productionLabelFiles,
+            VerificationResult verificationResult, string colaPackageFileName, IEnumerable<string> productionLabelFiles,
             long processingTimeMs, string? colaBlobUrl, List<string>? labelBlobUrls, string? aiComplianceSummary,
             DateTime? aiSummaryGeneratedUtc, string? aiModelUsed, string? aiPromptVersion, int? aiPromptTokens,
             int? aiCompletionTokens, int? aiTotalTokens, double? aiGenerationTimeMs, int riskScore,
@@ -20,13 +20,14 @@ namespace LabelVerify.Web.Services
                 Id = reviewId,
                 ReviewDateUtc = DateTime.UtcNow,
                 BrandName = approved.BrandName,
-                Recommendation = result.Recommendation,
-                OverallScore = result.OverallScore,
+                Recommendation = verificationResult.Recommendation,
+                OverallScore = verificationResult.OverallScore,
                 ProcessingTimeMs = processingTimeMs,
                 ColaPackageFileName = colaPackageFileName,
                 UploadedLabelFiles = string.Join("; ", productionLabelFiles),
                 ApprovedProfileJson = JsonSerializer.Serialize(approved),
                 ProductionFactsJson = JsonSerializer.Serialize(production),
+                VerificationResultJson = JsonSerializer.Serialize(verificationResult),
                 ColaPackageBlobUrl = colaBlobUrl,
                 ProductionLabelBlobUrlsJson = JsonSerializer.Serialize(labelBlobUrls),
                 WorkflowStatus = "Submitted",
@@ -44,7 +45,7 @@ namespace LabelVerify.Web.Services
                 AiGenerationTimeMs = aiGenerationTimeMs
             };
 
-            foreach (var check in result.Checks)
+            foreach (var check in verificationResult.Checks)
             {
                 session.Results.Add(
                     new ReviewResultEntity

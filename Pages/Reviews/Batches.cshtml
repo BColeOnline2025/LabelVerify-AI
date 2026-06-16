@@ -1,0 +1,53 @@
+﻿@page
+@model LabelVerify.Web.Pages.Reviews.BatchesModel
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Review Batches</h2>
+    <a asp-page="/Reviews/BatchCreate" class="btn btn-primary">
+        New Batch Review
+    </a>
+</div>
+<div class="card">
+    <div class="card-header">
+        <strong>Existing Batches</strong>
+    </div>
+    <div class="card-body">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Batch Name</th>
+                    <th>Created</th>
+                    <th>Created By</th>
+                    <th>Status</th>
+                    <th>Total</th>
+                    <th>Completed</th>
+                    <th>Pending</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var batch in Model.Batches)
+                {
+                    var total = batch.Packages.Count;
+                    var completed = batch.Packages.Count(x => x.Status == "Completed");
+                    var pending = total - completed;
+
+                    <tr>
+                        <td>@batch.BatchName</td>
+                        <td>@batch.CreatedUtc.ToLocalTime().ToString("g")</td>
+                        <td>@batch.CreatedBy</td>
+                        <td>@batch.Status</td>
+                        <td>@total</td>
+                        <td>@completed</td>
+                        <td>@pending</td>
+                        <td>
+                            <a asp-page="/Reviews/BatchDetails" asp-route-id="@batch.Id" class="btn btn-sm btn-primary">
+                                Continue
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
