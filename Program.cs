@@ -44,7 +44,11 @@ builder.Services.AddScoped<AiReviewEnrichmentService>();
 builder.Services.Configure<AzureVisionOptions>(builder.Configuration.GetSection("AzureVision"));
 builder.Services.Configure<ApplicationOptions>(builder.Configuration.GetSection("Application"));
 builder.Services.Configure<AzureDocumentIntelligenceOptions>(builder.Configuration.GetSection("AzureDocumentIntelligence"));
-builder.Services.Configure<AzureBlobStorageOptions>(builder.Configuration.GetSection("AzureBlobStorage"));
+builder.Services.Configure<AzureBlobStorageOptions>(options =>
+{
+    options.ConnectionString = builder.Configuration["AzureBlobStorageConnectionString"]
+        ?? builder.Configuration["AzureBlobStorage:ConnectionString"] ?? string.Empty;
+}); 
 builder.Services.Configure<AzureOpenAiOptions>(builder.Configuration.GetSection("AzureOpenAI"));
 
 QuestPDF.Settings.License = LicenseType.Community;
