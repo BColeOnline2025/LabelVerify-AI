@@ -118,35 +118,15 @@ namespace LabelVerify.Web.Services
             var myInReview = reviews.Count(x => x.AssignedReviewer == currentReviewer && x.WorkflowStatus == "In Review");
             var myCompleted = reviews.Count(x => x.AssignedReviewer == currentReviewer && x.CompletedUtc.HasValue);
             var unassigned = reviews.Count(x => string.IsNullOrWhiteSpace(x.AssignedReviewer) && x.WorkflowStatus == "Submitted");
-
-            var completedDebug = reviews
-                .Select(x => new
-                {
-                    x.AssignedReviewer,
-                    x.ReviewerName,
-                    x.WorkflowStatus,
-                    x.FinalDisposition,
-                    x.CompletedUtc
-                })
-                .ToList();
-            
-            var reviewerLeaderboard = reviews
-                .Where(x =>
-                    (x.WorkflowStatus == "Approved" ||
-                     x.WorkflowStatus == "Rejected" ||
+            var reviewerLeaderboard = reviews.Where(x =>
+                    (x.WorkflowStatus == "Approved" || x.WorkflowStatus == "Rejected" ||
                      !string.IsNullOrWhiteSpace(x.FinalDisposition)) &&
-                    (!string.IsNullOrWhiteSpace(x.AssignedReviewer) ||
-                     !string.IsNullOrWhiteSpace(x.ReviewerName)))
-                .GroupBy(x =>
-                    !string.IsNullOrWhiteSpace(x.AssignedReviewer)
-                        ? x.AssignedReviewer!
-                        : x.ReviewerName!)
+                    (!string.IsNullOrWhiteSpace(x.AssignedReviewer) || !string.IsNullOrWhiteSpace(x.ReviewerName)))
+                .GroupBy(x => !string.IsNullOrWhiteSpace(x.AssignedReviewer) ? x.AssignedReviewer! : x.ReviewerName!)
                 .Select(g => new ReviewerProductivityMetric
                 {
                     ReviewerName = g.Key,
-
                     ReviewsCompleted = g.Count(),
-
                     AverageReviewHours =
                         g.Any(x => x.ReviewStartedUtc.HasValue && x.CompletedUtc.HasValue)
                             ? g.Where(x => x.ReviewStartedUtc.HasValue && x.CompletedUtc.HasValue)
@@ -154,21 +134,105 @@ namespace LabelVerify.Web.Services
                                    (x.CompletedUtc!.Value -
                                     x.ReviewStartedUtc!.Value).TotalHours)
                             : 0,
-
-                    ApprovalRate =
-                        g.Count(x => x.FinalDisposition == "Approve")
-                        * 100.0 / g.Count(),
-
-                    ReviewRate =
-                        g.Count(x => x.FinalDisposition == "Review")
-                        * 100.0 / g.Count(),
-
-                    RejectionRate =
-                        g.Count(x => x.FinalDisposition == "Reject")
-                        * 100.0 / g.Count()
+                    ApprovalRate = g.Count(x => x.FinalDisposition == "Approve") * 100.0 / g.Count(),
+                    ReviewRate = g.Count(x => x.FinalDisposition == "Review") * 100.0 / g.Count(),
+                    RejectionRate = g.Count(x => x.FinalDisposition == "Reject") * 100.0 / g.Count()
                 })
                 .OrderByDescending(x => x.ReviewsCompleted)
                 .ToList();
+            var topFindings = await _db.ReviewResults
+                .Where(x =>string.Equals(x.Status, "Fail") || string.Equals(x.Status, "Review"))
+                .GroupBy(x => x.FieldName)
+                .Select(g => new FindingMetric
+                {
+                    FieldName = g.Key,
+                    FindingCount = g.Count()
+                })
+                .OrderByDescending(x => x.FindingCount)
+                .Take(10)
+                .ToListAsync();
+            var totalOpenReviews = reviews.Count(x => x.WorkflowStatus == "Submitted" || x.WorkflowStatus == "Assigned" ||
+                x.WorkflowStatus == "In Review");
+            var activeReviewers = reviews
+                .Where(x => !string.IsNullOrWhiteSpace(x.AssignedReviewer))
+                .Select(x => x.AssignedReviewer)
+                .Distinct()
+                .Count();
+            var reviewsPerReviewer = activeReviewers > 0 ? (double)totalOpenReviews / activeReviewers : 0;
+            var priorityQueue = reviews
+                .Where(x =>
+                    x.WorkflowStatus == "Submitted" ||
+                    x.WorkflowStatus == "Assigned" ||
+                    x.WorkflowStatus == "In Review")
+                .OrderByDescending(x => x.RiskScore)
+                .ThenBy(x => x.ReviewDateUtc)
+                .Take(10)
+                .Select(x => new PriorityReviewItem
+                {
+                    ReviewId = x.Id,
+                    BrandName = x.BrandName ?? x.ColaPackageFileName,
+                    RiskScore = x.RiskScore,
+                    RiskLevel = x.RiskLevel ?? "Low",
+                    Recommendation = x.Recommendation,
+                    AssignedReviewer = x.AssignedReviewer,
+                    DaysOpen =
+                        (int)(DateTime.UtcNow - x.ReviewDateUtc).TotalDays
+                })
+                .ToList();
+            var highRiskReviews = reviews.Count(x => x.RiskLevel == "High");
+            var mediumRiskReviews = reviews.Count(x => x.RiskLevel == "Medium");
+            var lowRiskReviews = reviews.Count(x => x.RiskLevel == "Low");
+            var queueRecommendationPayload = new
+            {
+                RiskDistribution = new
+                {
+                    HighRiskReviews = highRiskReviews,
+                    MediumRiskReviews = mediumRiskReviews,
+                    LowRiskReviews = lowRiskReviews
+                },
+
+                Sla = new
+                {
+                    ReviewsExceedingSla = reviewsExceedingSla,
+                    OldestOpenReviewDays = oldestOpenReviewDays
+                },
+
+                Queue = priorityQueue.Select(x => new
+                {
+                    x.ReviewId,
+                    x.BrandName,
+                    x.RiskScore,
+                    x.RiskLevel,
+                    x.Recommendation,
+                    x.AssignedReviewer,
+                    x.DaysOpen
+                }),
+
+                ReviewerWorkload = reviewerLeaderboard.Select(x => new
+                {
+                    x.ReviewerName,
+                    x.ReviewsCompleted,
+                    x.AverageReviewHours,
+                    x.ApprovalRate,
+                    x.ReviewRate,
+                    x.RejectionRate
+                }),
+
+                OpenReviews = totalOpenReviews,
+                ActiveReviewers = activeReviewers,
+                ReviewsPerReviewer = reviewsPerReviewer
+            };
+
+            string? queueRecommendation = null;
+
+            try
+            {
+                queueRecommendation = await _azureOpenAiSummaryService.GenerateQueueRecommendationAsync(queueRecommendationPayload);
+            }
+            catch
+            {
+                queueRecommendation = "Queue recommendation unavailable.";
+            }
 
             var insightsPayload = new
             {
@@ -229,7 +293,18 @@ namespace LabelVerify.Web.Services
                 AverageReviewHours = averageReviewHours,
                 OperationalInsightsGeneratedUtc = DateTime.UtcNow,
                 OperationalInsightsModel = _azureOpenAiSummaryService.ModelName,
-                ReviewerLeaderboard = reviewerLeaderboard
+                TopFindings = topFindings,
+                TotalOpenReviews = totalOpenReviews,
+                ActiveReviewers = activeReviewers,
+                ReviewsPerReviewer = reviewsPerReviewer,
+                ReviewerLeaderboard = reviewerLeaderboard,
+                PriorityQueue = priorityQueue,
+                HighRiskReviews = highRiskReviews,
+                MediumRiskReviews = mediumRiskReviews,
+                LowRiskReviews = lowRiskReviews,
+                QueueRecommendation = queueRecommendation,
+                QueueRecommendationGeneratedUtc = DateTime.UtcNow,
+                QueueRecommendationModel = "gpt-5.4-mini",
             };
         }
 
@@ -383,6 +458,49 @@ namespace LabelVerify.Web.Services
             review.ReviewStartedUtc ??= DateTime.UtcNow;
 
             await _db.SaveChangesAsync();
+        }
+
+        public async Task<List<ReviewSession>> GetWorkQueueAsync()
+        {
+            return await _db.ReviewSessions
+                .Where(x =>
+                    x.WorkflowStatus == "Submitted" ||
+                    x.WorkflowStatus == "Assigned" ||
+                    x.WorkflowStatus == "In Review")
+                .OrderByDescending(x => x.RiskScore)
+                .ThenBy(x => x.ReviewDateUtc)
+                .ToListAsync();
+        }
+
+        public async Task<ChartData> GetFindingsByMonthChartAsync()
+        {
+            var rawData = await _db.ReviewResults
+                .Where(x =>
+                    x.Status == "Fail" ||
+                    x.Status == "Review")
+                .GroupBy(x => new
+                {
+                    x.ReviewSession.ReviewDateUtc.Year,
+                    x.ReviewSession.ReviewDateUtc.Month
+                })
+                .Select(g => new
+                {
+                    g.Key.Year,
+                    g.Key.Month,
+                    Count = g.Count()
+                })
+                .OrderBy(x => x.Year)
+                .ThenBy(x => x.Month)
+                .ToListAsync();
+
+            return new ChartData
+            {
+                Labels = [.. rawData
+                    .Select(x => new DateTime(x.Year, x.Month, 1)
+                        .ToString("MMM yyyy"))],
+
+                Values = [.. rawData.Select(x => x.Count)]
+            };
         }
     }
 }

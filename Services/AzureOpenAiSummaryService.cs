@@ -420,5 +420,252 @@ namespace LabelVerify.Web.Services
             return !string.IsNullOrWhiteSpace(_options.Endpoint)
                 && !string.IsNullOrWhiteSpace(_options.ApiKey) && !string.IsNullOrWhiteSpace(_options.DeploymentName);
         }
+
+        public async Task<string> GenerateMonthlyComplianceReportAsync(object metrics)
+        {
+            if (!IsConfigured())
+            {
+                return "Azure OpenAI is not configured. Monthly compliance report could not be generated.";
+            }
+
+            try
+            {
+                var prompt = await BuildPromptFromFileAsync("MonthlyComplianceReportPrompt.txt", metrics);
+
+                var endpoint = _options.Endpoint.TrimEnd('/');
+                var url = $"{endpoint}/openai/v1/chat/completions";
+
+                using var request = new HttpRequestMessage(HttpMethod.Post, url);
+
+                request.Headers.Add("api-key", _options.ApiKey);
+
+                var body = new
+                {
+                    model = _options.DeploymentName,
+                    messages = new[]
+                    {
+                    new
+                    {
+                        role = "system",
+                        content =
+                            "You are a senior compliance operations executive. You generate concise management-ready compliance operations reports based only on supplied metrics."
+                    },
+                    new
+                    {
+                        role = "user",
+                        content = prompt
+                    }
+                },
+                    max_completion_tokens = 1200,
+                    temperature = 0.2
+                };
+
+                request.Content = JsonContent.Create(body);
+
+                using var response = await _httpClient.SendAsync(request);
+
+                var responseBody = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new InvalidOperationException($"Azure OpenAI failed: {(int)response.StatusCode} {response.ReasonPhrase}. {responseBody}");
+                }
+
+                using var document = JsonDocument.Parse(responseBody);
+
+                var report = document
+                    .RootElement
+                    .GetProperty("choices")[0]
+                    .GetProperty("message")
+                    .GetProperty("content")
+                    .GetString();
+
+                if (string.IsNullOrWhiteSpace(report))
+                {
+                    return "Azure OpenAI returned an empty monthly compliance report.";
+                }
+
+                report = string.Join(
+                    Environment.NewLine,
+                    report
+                        .Split('\n')
+                        .Select(x => x.TrimEnd()))
+                    .Trim();
+
+                return report;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Azure OpenAI monthly compliance report generation failed.");
+
+                return $"Monthly compliance report generation failed: {ex.Message}";
+            }
+        }
+
+        private static async Task<string> BuildPromptFromFileAsync( string fileName, object payload)
+        {
+            var promptPath = Path.Combine(AppContext.BaseDirectory, "Prompts", fileName);
+
+            if (!File.Exists(promptPath))
+            {
+                throw new FileNotFoundException($"Prompt file was not found: {fileName}", promptPath);
+            }
+
+            var template = await File.ReadAllTextAsync(promptPath);
+
+            return template.Replace("{{DATA}}", JsonSerializer.Serialize(payload, new JsonSerializerOptions{WriteIndented = true}));
+        }
+
+        public async Task<string> GenerateRiskAssessmentAsync(object payload)
+        {
+            if (!IsConfigured())
+            {
+                return "Azure OpenAI is not configured.";
+            }
+
+            try
+            {
+                var prompt = await BuildPromptFromFileAsync("RiskAssessmentPrompt.txt", payload);
+
+                var endpoint = _options.Endpoint.TrimEnd('/');
+                var url = $"{endpoint}/openai/v1/chat/completions";
+
+                using var request = new HttpRequestMessage(HttpMethod.Post, url);
+
+                request.Headers.Add("api-key", _options.ApiKey);
+
+                var body = new
+                {
+                    model = _options.DeploymentName,
+                    messages = new[]
+                    {
+                    new
+                    {
+                        role = "system",
+                        content =
+                            "You are a senior TTB compliance reviewer specializing in risk prioritization."
+                    },
+                    new
+                    {
+                        role = "user",
+                        content = prompt
+                    }
+                },
+                    max_completion_tokens = 700,
+                    temperature = 0.2
+                };
+
+                request.Content = JsonContent.Create(body);
+
+                using var response = await _httpClient.SendAsync(request);
+
+                var responseBody = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new InvalidOperationException($"Azure OpenAI failed: {(int)response.StatusCode} {response.ReasonPhrase}. {responseBody}");
+                }
+
+                using var document = JsonDocument.Parse(responseBody);
+
+                var riskAssessment = document
+                    .RootElement
+                    .GetProperty("choices")[0]
+                    .GetProperty("message")
+                    .GetProperty("content")
+                    .GetString();
+
+                if (string.IsNullOrWhiteSpace(riskAssessment))
+                {
+                    return "Azure OpenAI returned an empty risk assessment.";
+                }
+
+                riskAssessment = string.Join(Environment.NewLine, riskAssessment.Split('\n').Select(x => x.TrimEnd())).Trim();
+
+                return riskAssessment;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "AI risk assessment generation failed.");
+
+                return $"Risk assessment generation failed: {ex.Message}";
+            }
+        }
+
+        public async Task<string> GenerateQueueRecommendationAsync(object payload)
+        {
+            if (!IsConfigured())
+            {
+                return "Azure OpenAI is not configured.";
+            }
+
+            try
+            {
+                var prompt = await BuildPromptFromFileAsync("QueueRecommendationPrompt.txt", payload);
+
+                var endpoint = _options.Endpoint.TrimEnd('/');
+                var url = $"{endpoint}/openai/v1/chat/completions";
+
+                using var request = new HttpRequestMessage(HttpMethod.Post, url);
+
+                request.Headers.Add("api-key", _options.ApiKey);
+
+                var body = new
+                {
+                    model = _options.DeploymentName,
+                    messages = new[]
+                    {
+                        new
+                        {
+                            role = "system",
+                            content =
+                                "You are a senior compliance operations manager. You provide queue management recommendations using only supplied operational data."
+                        },
+                        new
+                        {
+                            role = "user",
+                            content = prompt
+                        }
+                    },
+                    max_completion_tokens = 600,
+                    temperature = 0.2
+                };
+
+                request.Content = JsonContent.Create(body);
+
+                using var response = await _httpClient.SendAsync(request);
+
+                var responseBody = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new InvalidOperationException($"Azure OpenAI failed: {(int)response.StatusCode} {response.ReasonPhrase}. {responseBody}");
+                }
+
+                using var document = JsonDocument.Parse(responseBody);
+
+                var recommendation = document
+                    .RootElement
+                    .GetProperty("choices")[0]
+                    .GetProperty("message")
+                    .GetProperty("content")
+                    .GetString();
+
+                if (string.IsNullOrWhiteSpace(recommendation))
+                {
+                    return "Azure OpenAI returned no queue recommendation.";
+                }
+
+                recommendation = string.Join(Environment.NewLine, recommendation.Split('\n').Select(x => x.TrimEnd())).Trim();
+
+                return recommendation;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "AI queue recommendation generation failed.");
+
+                return $"Queue recommendation unavailable: {ex.Message}";
+            }
+        }
     }
 }

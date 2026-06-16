@@ -21,7 +21,7 @@
             <a asp-page-handler="ExportZip" asp-route-id="@Model.Review.Id" class="btn btn-success">Export ZIP</a>
         </div>
         <div class="row mb-4">
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card h-100">
                     <div class="card-body text-center d-flex flex-column justify-content-center">
                         <h6>Recommendation</h6>
@@ -29,7 +29,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card h-100">
                     <div class="card-body text-center d-flex flex-column justify-content-center">
                         <h6>Score</h6>
@@ -37,7 +37,70 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <h6>Risk Level</h6>
+
+                        @if (Model.Review.RiskLevel == "High")
+                        {
+                            <span class="badge bg-danger fs-6">
+                                @Model.Review.RiskScore - @Model.Review.RiskLevel
+                            </span>
+                        }
+                        else if (Model.Review.RiskLevel == "Medium")
+                        {
+                            <span class="badge bg-warning text-dark fs-6">
+                                @Model.Review.RiskScore - @Model.Review.RiskLevel
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success fs-6">
+                                @Model.Review.RiskScore - @Model.Review.RiskLevel
+                            </span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Review.RiskFactors))
+        {
+            <div class="row mt-4 mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <strong>Risk Factors</strong>
+                        </div>
+                        <div class="card-body">
+                            @Model.Review.RiskFactors
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.Review.AiRiskAssessment))
+        {
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <strong>AI Risk Assessment</strong>
+                        </div>
+                        <div class="card-body">
+                            <div style="white-space: pre-line;">
+                                @Model.Review.AiRiskAssessment
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="row mb-4">
+            <div class="col-md-6">
                 <div class="card h-100">
                     <div class="card-body text-center d-flex flex-column justify-content-center">
                         <h6>Status</h6>
@@ -45,7 +108,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-6">
                 <div class="card h-100">
                     <div class="card-body text-center d-flex flex-column justify-content-center">
                         <h6>Review Date</h6>

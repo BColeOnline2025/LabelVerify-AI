@@ -35,5 +35,10 @@
         public DateTime? AssignedUtc { get; set; }
         public DateTime? ReviewStartedUtc { get; set; }
         public DateTime? CompletedUtc { get; set; }
+        public int RiskScore { get; set; }
+        public string? RiskLevel { get; set; }
+        public string? RiskFactors { get; set; }
+        public string? AiRiskAssessment { get; set; }
+        public string? BrandName { get; set; }
     }
 }

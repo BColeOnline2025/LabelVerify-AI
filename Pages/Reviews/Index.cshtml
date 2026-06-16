@@ -8,6 +8,13 @@
     <div class="alert alert-primary">
         Historical compliance reviews stored in Azure SQL.
     </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Review Operations Dashboard</h2>
+        <div>
+            <a asp-page="./WorkQueue" class="btn btn-primary"">Work Queue</a>
+            <a asp-page-handler="MonthlyReport" class="btn btn-primary">Generate Monthly Compliance Report</a>
+        </div>
+    </div>
 
     @if (!string.IsNullOrWhiteSpace(Model.Metrics.OperationalInsights))
     {
@@ -28,6 +35,137 @@
             Model:
             @Model.Metrics.OperationalInsightsModel
         </div><br />
+    }
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-primary text-center h-100">
+                <div class="card-body">
+                    <h6>Open Reviews</h6>
+                    <h3>@Model.Metrics.TotalOpenReviews</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-info text-center h-100">
+                <div class="card-body">
+                    <h6>Active Reviewers</h6>
+                    <h3>@Model.Metrics.ActiveReviewers</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-secondary text-center h-100">
+                <div class="card-body">
+                    <h6>Reviews Per Reviewer</h6>
+                    <h3>@Model.Metrics.ReviewsPerReviewer.ToString("0.0")</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-danger text-center h-100">
+                <div class="card-body">
+                    <h6>High Risk Reviews</h6>
+                    <h2>@Model.Metrics.HighRiskReviews</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-warning text-center h-100">
+                <div class="card-body">
+                    <h6>Medium Risk Reviews</h6>
+                    <h2>@Model.Metrics.MediumRiskReviews</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-success text-center h-100">
+                <div class="card-body">
+                    <h6>Low Risk Reviews</h6>
+                    <h2>@Model.Metrics.LowRiskReviews</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header">
+            <strong>Priority Review Queue</strong>
+        </div>
+        <div class="card-body">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Risk</th>
+                        <th>Review</th>
+                        <th>Recommendation</th>
+                        <th>Reviewer</th>
+                        <th>Days Open</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Metrics.PriorityQueue)
+                    {
+                        <tr>
+
+                            <td>
+                                @if (item.RiskLevel == "High")
+                                {
+                                    <span class="badge bg-danger">
+                                        @item.RiskScore
+                                    </span>
+                                }
+                                else if (item.RiskLevel == "Medium")
+                                {
+                                    <span class="badge bg-warning text-dark">
+                                        @item.RiskScore
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">
+                                        @item.RiskScore
+                                    </span>
+                                }
+                            </td>
+                            <td>@item.BrandName</td>
+                            <td>@item.Recommendation</td>
+                            <td>
+                                @(string.IsNullOrWhiteSpace(item.AssignedReviewer) ? "Unassigned" : item.AssignedReviewer)
+                            </td>
+                            <td>@item.DaysOpen</td>
+                            <td>
+                                <a asp-page="/Reviews/Details" asp-route-id="@item.ReviewId" class="btn btn-sm btn-primary">Open</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Metrics.QueueRecommendation))
+    {
+        <div class="card mb-4">
+            <div class="card-header">
+                <strong>AI Queue Recommendation</strong>
+            </div>
+            <div class="card-body">
+                <div style="white-space: pre-line;">
+                    @Model.Metrics.QueueRecommendation
+                </div>
+                <hr />
+                <div class="text-muted small">
+                    Generated:
+                    @Model.Metrics.QueueRecommendationGeneratedUtc?.ToLocalTime().ToString("g")
+                    <br />
+                    Model:
+                    @Model.Metrics.QueueRecommendationModel
+                </div>
+            </div>
+        </div>
     }
 
     <div class="alert alert-info">
@@ -87,6 +225,58 @@
                 <div class="card-body">
                     <div style="height:300px;">
                         <canvas id="reviewerProductivityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <strong>Top Compliance Findings</strong>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Field</th>
+                                <th>Findings</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var finding in Model.Metrics.TopFindings)
+                            {
+                                <tr>
+                                    <td>@finding.FieldName</td>
+                                    <td>@finding.FindingCount</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <strong>Top Compliance Findings Chart</strong>
+                </div>
+                <div class="card-body">
+                    <div style="height:350px;">
+                        <canvas id="topFindingsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <strong>Findings by Month</strong>
+                </div>
+                <div class="card-body">
+                    <div style="height:300px;">
+                        <canvas id="findingsByMonthChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -733,26 +923,61 @@
             }
         });
 
-        const reviewerProductivityElement = document.getElementById('reviewerProductivityChart');
+        const topFindingsElement =document.getElementById('topFindingsChart');
 
-        if (reviewerProductivityElement) {
-            new Chart(reviewerProductivityElement, {
+        if (topFindingsElement) {
+            new Chart(topFindingsElement, {
                 type: 'bar',
                 data: {
-                labels:
-                @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ReviewerProductivityChart.Labels)),
-                datasets: [{
-                    label: 'Completed Reviews',
-                    data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ReviewerProductivityChart.Values))
-                }]
-            },
+                    labels:
+                        @Html.Raw(
+                            System.Text.Json.JsonSerializer.Serialize(
+                                Model.TopFindingsChart.Labels)),
+                    datasets: [{
+                        label: 'Findings',
+                        data:
+                            @Html.Raw(
+                                System.Text.Json.JsonSerializer.Serialize(
+                                    Model.TopFindingsChart.Values))
+                    }]
+                },
                 options: {
                     indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                        display: false
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        const findingsByMonthElement = document.getElementById('findingsByMonthChart');
+
+        if (findingsByMonthElement) {
+            new Chart(findingsByMonthElement, {
+                type: 'bar',
+                data: {
+                    labels:
+                        @Html.Raw(
+                            System.Text.Json.JsonSerializer.Serialize(
+                                Model.FindingsByMonthChart.Labels)),
+                    datasets: [{
+                        label: 'Findings',
+                        data:
+                            @Html.Raw(
+                                System.Text.Json.JsonSerializer.Serialize(
+                                    Model.FindingsByMonthChart.Values))
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
                         }
                     }
                 }

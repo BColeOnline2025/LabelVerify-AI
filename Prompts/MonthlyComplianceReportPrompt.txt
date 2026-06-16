@@ -1,0 +1,32 @@
+﻿You are a senior compliance operations executive.
+
+Analyze the supplied monthly compliance metrics.
+
+Provide the following sections:
+
+Executive Summary
+
+Operational Performance
+
+Reviewer Productivity
+
+Compliance Findings
+
+Trend Analysis
+
+Operational Risks
+
+Recommendations
+
+Requirements:
+
+Use only supplied data.
+Do not invent facts.
+Keep response under 800 words.
+Use professional executive language.
+Return plain text.
+No markdown.
+
+DATA
+
+{{DATA}}

@@ -32,5 +32,16 @@ namespace LabelVerify.Web.Models
         public DateTime? OperationalInsightsGeneratedUtc { get; set; }
         public string? OperationalInsightsModel { get; set; }
         public List<ReviewerProductivityMetric> ReviewerLeaderboard { get; set; } = [];
+        public List<FindingMetric> TopFindings { get; set; } = [];
+        public int TotalOpenReviews { get; set; }
+        public int ActiveReviewers { get; set; }
+        public double ReviewsPerReviewer { get; set; }
+        public List<PriorityReviewItem> PriorityQueue { get; set; } = [];
+        public int HighRiskReviews { get; set; }
+        public int MediumRiskReviews { get; set; }
+        public int LowRiskReviews { get; set; }
+        public string? QueueRecommendation { get; set; }
+        public DateTime? QueueRecommendationGeneratedUtc { get; set; }
+        public string? QueueRecommendationModel { get; set; }
     }
 }

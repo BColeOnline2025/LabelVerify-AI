@@ -16,7 +16,8 @@ namespace LabelVerify.Web.Pages
         PdfAuditReportGenerator pdfAuditReportGenerator, IMemoryCache memoryCache, 
         ReviewHistoryService reviewHistoryService, AzureBlobStorageService blobStorageService,
         ILogger<ColaReviewModel> logger, ReviewAuditLogService auditLogService,
-        ReviewQueryService reviewQueryService, AzureOpenAiSummaryService azureOpenAiSummaryService) : PageModel
+        ReviewQueryService reviewQueryService, AzureOpenAiSummaryService azureOpenAiSummaryService,
+        RiskScoringService riskScoringService) : PageModel
     {
         private readonly IColaPackageIngestionService _colaPackageIngestionService = colaPackageIngestionService;
         private readonly IOcrService _ocrService = ocrService;
@@ -31,6 +32,7 @@ namespace LabelVerify.Web.Pages
         private readonly ReviewAuditLogService _auditLogService = auditLogService;
         private readonly ReviewQueryService _reviewQueryService = reviewQueryService;
         private readonly AzureOpenAiSummaryService _azureOpenAiSummaryService = azureOpenAiSummaryService;
+        private readonly RiskScoringService _riskScoringService = riskScoringService;
 
         [BindProperty]
         public ColaReviewUploadViewModel Input { get; set; } = new();
@@ -146,6 +148,28 @@ namespace LabelVerify.Web.Pages
                 
                 ApplyFieldSourcesToResult(Result);
 
+                var riskAssessment = _riskScoringService.Calculate(Result);
+
+                var aiRiskAssessment = await _azureOpenAiSummaryService.GenerateRiskAssessmentAsync(
+                    new
+                    {
+                        riskAssessment.RiskScore,
+                        riskAssessment.RiskLevel,
+                        riskAssessment.RiskFactors,
+                        Result.Recommendation,
+                        Result.OverallScore,
+                        Checks = Result.Checks.Select(x => new
+                        {
+                            x.FieldName,
+                            x.ExpectedValue,
+                            x.ActualValue,
+                            x.SourceLabel,
+                            x.Status,
+                            x.ConfidenceScore,
+                            x.Notes
+                        })
+                    });
+                
                 foreach (var check in Result.Checks.Where(x => x.Status == "Fail" || x.Status == "Review"))
                 {
                     check.AiAnalysis = await _azureOpenAiSummaryService.GenerateFailureAnalysisAsync(check);
@@ -163,7 +187,8 @@ namespace LabelVerify.Web.Pages
                     Input.ProductionLabelImages.Select(x => x.FileName), ProcessingTimeMs, colaBlobUrl,
                     labelBlobUrls, aiResult.Summary, aiResult.GeneratedUtc, aiResult.ModelUsed,
                     aiResult.PromptVersion, aiResult.PromptTokens, aiResult.CompletionTokens,
-                    aiResult.TotalTokens, aiResult.GenerationTimeMs);
+                    aiResult.TotalTokens, aiResult.GenerationTimeMs, riskAssessment.RiskScore,
+                    riskAssessment.RiskLevel, riskAssessment.RiskFactors, aiRiskAssessment);
 
                 ReviewId = reviewSessionId.ToString();
                 FinalDisposition = Result.Recommendation;

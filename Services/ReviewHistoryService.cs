@@ -12,12 +12,14 @@ namespace LabelVerify.Web.Services
             VerificationResult result, string colaPackageFileName, IEnumerable<string> productionLabelFiles,
             long processingTimeMs, string? colaBlobUrl, List<string>? labelBlobUrls, string? aiComplianceSummary,
             DateTime? aiSummaryGeneratedUtc, string? aiModelUsed, string? aiPromptVersion, int? aiPromptTokens,
-            int? aiCompletionTokens, int? aiTotalTokens, double? aiGenerationTimeMs)
+            int? aiCompletionTokens, int? aiTotalTokens, double? aiGenerationTimeMs, int riskScore,
+            string? riskLevel, string? riskFactors, string? aiRiskAssessment)
         {
             var session = new ReviewSession
             {
                 Id = reviewId,
                 ReviewDateUtc = DateTime.UtcNow,
+                BrandName = approved.BrandName,
                 Recommendation = result.Recommendation,
                 OverallScore = result.OverallScore,
                 ProcessingTimeMs = processingTimeMs,
@@ -35,6 +37,10 @@ namespace LabelVerify.Web.Services
                 AiPromptTokens = aiPromptTokens,
                 AiCompletionTokens = aiCompletionTokens,
                 AiTotalTokens = aiTotalTokens,
+                RiskScore = riskScore,
+                RiskLevel = riskLevel,
+                RiskFactors = riskFactors,
+                AiRiskAssessment = aiRiskAssessment,
                 AiGenerationTimeMs = aiGenerationTimeMs
             };
 

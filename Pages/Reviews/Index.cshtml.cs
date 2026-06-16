@@ -5,10 +5,13 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace LabelVerify.Web.Pages.Reviews
 {
-    public class IndexModel(ReviewQueryService reviewQueryService, DashboardAnalyticsService dashboardAnalyticsService) : PageModel
+    public class IndexModel(ReviewQueryService reviewQueryService, DashboardAnalyticsService dashboardAnalyticsService,
+        MonthlyComplianceReportService monthlyComplianceReportService, MonthlyCompliancePdfGenerator monthlyCompliancePdfGenerator) : PageModel
     {
         private readonly ReviewQueryService _reviewQueryService = reviewQueryService;
         private readonly DashboardAnalyticsService _dashboardAnalyticsService = dashboardAnalyticsService;
+        private readonly MonthlyComplianceReportService _monthlyComplianceReportService = monthlyComplianceReportService;
+        private readonly MonthlyCompliancePdfGenerator _monthlyCompliancePdfGenerator = monthlyCompliancePdfGenerator;
 
         [BindProperty(SupportsGet = true)]
         public string? Recommendation { get; set; }
@@ -39,6 +42,8 @@ namespace LabelVerify.Web.Pages.Reviews
         public ChartData TopFailureChart { get; set; } = new();
         public ChartData ReviewerProductivityChart { get; set; } = new();
         public List<string> OperationalInsights { get; set; } = [];
+        public ChartData TopFindingsChart { get; set; } = new();
+        public ChartData FindingsByMonthChart { get; set; } = new();
 
         public async Task OnGetAsync()
         {
@@ -59,6 +64,13 @@ namespace LabelVerify.Web.Pages.Reviews
             Reviews = result.Items;
             TotalRecords = result.TotalRecords; 
             Metrics = await _reviewQueryService.GetMetricsAsync();
+            FindingsByMonthChart = await _reviewQueryService.GetFindingsByMonthChartAsync();
+            TopFindingsChart = new ChartData
+            {
+                Labels = [.. Metrics.TopFindings.Select(x => x.FieldName)],
+
+                Values = [.. Metrics.TopFindings.Select(x => x.FindingCount)]
+            };
             TopFailures = await _reviewQueryService.GetTopFailureReasonsAsync();
             ReviewerProductivityChart = new ChartData
             {
@@ -78,6 +90,14 @@ namespace LabelVerify.Web.Pages.Reviews
             TopFailureChart = await _dashboardAnalyticsService.GetTopFailureReasonsChartAsync();
             ReviewerProductivityChart = await _dashboardAnalyticsService.GetReviewerProductivityChartAsync();
             OperationalInsights = await _dashboardAnalyticsService.GetOperationalInsightsAsync();
+        }
+
+        public async Task<IActionResult>OnGetMonthlyReportAsync()
+        {
+            var report = await _monthlyComplianceReportService.GenerateAsync();
+            var pdf = _monthlyCompliancePdfGenerator.Generate(report);
+
+            return File(pdf, "application/pdf", $"ComplianceReport_{DateTime.UtcNow:yyyyMMdd}.pdf");
         }
     }
 }

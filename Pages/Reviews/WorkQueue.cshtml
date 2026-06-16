@@ -1,0 +1,82 @@
+﻿@page
+@model LabelVerify.Web.Pages.Reviews.WorkQueueModel
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Reviewer Work Queue</h2>
+        <a asp-page="./Index" class="btn btn-secondary">Back to Review History</a>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <strong>Open Reviews</strong>
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Review Date</th>
+                        <th>File</th>
+                        <th>Recommendation</th>
+                        <th>Score</th>
+                        <th>Status</th>
+                        <th>Assigned To</th>
+                        <th>Days Open</th>
+                        <th>Risk</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var review in Model.Reviews)
+                    {
+                        var daysOpen =(DateTime.UtcNow - review.ReviewDateUtc).Days;
+                        var slaClass = daysOpen switch
+                        {
+                            <= 3 => "bg-success",
+                            <= 7 => "bg-warning text-dark",
+                            _ => "bg-danger"
+                        };
+
+                        <tr>
+                            <td>@review.ReviewDateUtc.ToLocalTime().ToString("g")</td>
+                            <td>@review.ColaPackageFileName</td>
+                            <td>@review.Recommendation</td>
+                            <td>@review.OverallScore%</td>
+                            <td>@review.WorkflowStatus</td>
+                            <td>
+                                @(string.IsNullOrWhiteSpace(review.AssignedReviewer) ? "Unassigned" : review.AssignedReviewer)
+                            </td>
+                            <td>
+                                <span class="badge @slaClass w-100">
+                                    @daysOpen Day@(daysOpen == 1 ? "" : "s")
+                                </span>
+                            </td>
+                            <td>
+                                @if (review.RiskLevel == "High")
+                                {
+                                    <span class="badge bg-danger">
+                                        @review.RiskScore
+                                    </span>
+                                }
+                                else if (review.RiskLevel == "Medium")
+                                {
+                                    <span class="badge bg-warning text-dark">
+                                        @review.RiskScore
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">
+                                        @review.RiskScore
+                                    </span>
+                                }
+                            </td>
+                            <td>
+                                <a asp-page="./Details" asp-route-id="@review.Id" class="btn btn-sm btn-primary">Open</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
