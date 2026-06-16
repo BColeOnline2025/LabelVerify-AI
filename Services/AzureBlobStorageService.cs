@@ -13,18 +13,30 @@ namespace LabelVerify.Web.Services
         Task<byte[]> DownloadAsync(string container, string blobName);
     }
 
-    public class AzureBlobStorageService(IOptions<AzureBlobStorageOptions> options)
+    public class AzureBlobStorageService(IOptions<AzureBlobStorageOptions> options, IConfiguration configuration)
     {
         private readonly AzureBlobStorageOptions _options = options.Value;
+        private readonly IConfiguration _configuration = configuration;
+
+        private string GetConnectionString()
+        {
+            return _options.ConnectionString
+                ?? _configuration["AzureBlobStorageConnectionString"]
+                ?? _configuration["AzureBlobStorage:ConnectionString"]
+                ?? string.Empty;
+        }
 
         public async Task<BlobUploadResult> UploadAsync(Stream stream, string containerName, string blobName, string contentType)
         {
-            if (string.IsNullOrWhiteSpace(_options.ConnectionString))
+            var connectionString = GetConnectionString();
+
+            if (string.IsNullOrWhiteSpace(connectionString))
             {
-                throw new InvalidOperationException("Azure Blob Storage is not configured.");
+                throw new InvalidOperationException(
+                    "Azure Blob Storage is not configured. Missing AzureBlobStorageConnectionString.");
             }
 
-            var containerClient = new BlobContainerClient(_options.ConnectionString, containerName);
+            var containerClient = new BlobContainerClient(connectionString, containerName);
 
             await containerClient.CreateIfNotExistsAsync(PublicAccessType.None);
 
@@ -44,13 +56,15 @@ namespace LabelVerify.Web.Services
 
         public async Task<MemoryStream> DownloadAsync(string containerName, string blobName)
         {
-            if (string.IsNullOrWhiteSpace(_options.ConnectionString))
+            var connectionString = GetConnectionString();
+
+            if (string.IsNullOrWhiteSpace(connectionString))
             {
-                throw new InvalidOperationException("Azure Blob Storage is not configured.");
+                throw new InvalidOperationException(
+                    "Azure Blob Storage is not configured. Missing AzureBlobStorageConnectionString.");
             }
 
-            var containerClient = new BlobContainerClient(_options.ConnectionString, containerName);
-
+            var containerClient = new BlobContainerClient(connectionString, containerName);
             var blobClient = containerClient.GetBlobClient(blobName);
 
             if (!await blobClient.ExistsAsync())
