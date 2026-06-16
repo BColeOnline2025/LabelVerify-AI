@@ -7,10 +7,9 @@ namespace LabelVerify.Web.Services
         private readonly ReviewQueryService _reviewQueryService = reviewQueryService;
         private readonly AzureOpenAiSummaryService _ai = ai;
 
-        public async Task<MonthlyComplianceReport>
-            GenerateAsync()
+        public async Task<MonthlyComplianceReport>GenerateAsync(string currentUser)
         {
-            var metrics = await _reviewQueryService.GetMetricsAsync();
+            var metrics = await _reviewQueryService.GetMetricsAsync(currentUser);
             var report = await _ai.GenerateMonthlyComplianceReportAsync(metrics);
 
             return new MonthlyComplianceReport

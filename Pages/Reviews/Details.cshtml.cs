@@ -4,19 +4,23 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.IO.Compression;
 using System.Text.Json;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace LabelVerify.Web.Pages.Reviews
 {
     public class DetailsModel(ReviewQueryService reviewQueryService, PdfAuditReportGenerator pdfAuditReportGenerator, 
         AzureBlobStorageService blobStorageService, ComplianceSummaryService complianceSummaryService,
-        ReviewAuditLogService auditLogService) : PageModel
+        ReviewAuditLogService auditLogService, UserManager<ApplicationUser> userManager) : PageModel
     {
+        private readonly UserManager<ApplicationUser> _userManager = userManager;
         private readonly ReviewQueryService _reviewQueryService = reviewQueryService;
         private readonly PdfAuditReportGenerator _pdfAuditReportGenerator = pdfAuditReportGenerator;
         private readonly AzureBlobStorageService _blobStorageService = blobStorageService;
         private readonly ComplianceSummaryService _complianceSummaryService = complianceSummaryService;
         private readonly ReviewAuditLogService _auditLogService = auditLogService;
 
+        public List<SelectListItem> ReviewerOptions { get; private set; }
         public ReviewSession? Review { get; set; }
         public string? ColaPackageDownloadUrl { get; set; }
         public List<string> ProductionLabelDownloadUrls { get; set; } = [];
@@ -27,12 +31,14 @@ namespace LabelVerify.Web.Pages.Reviews
         [BindProperty]
         public string ReviewerNotes { get; set; } = string.Empty;
         [BindProperty]
-        public string FinalDisposition { get; set; } = string.Empty;
+        public string? FinalDisposition { get; set; } = string.Empty;
         [BindProperty]
         public string AssignedReviewer { get; set; } = "";
 
         public async Task<IActionResult> OnGetAsync(Guid id)
         {
+            LoadReviewerOptions();
+
             Review = await _reviewQueryService.GetByIdAsync(id);
 
             if (Review == null)
@@ -66,7 +72,7 @@ namespace LabelVerify.Web.Pages.Reviews
             AuditLogs = await _reviewQueryService.GetAuditLogAsync(Review.Id);
             ReviewerName = Review.ReviewerName ?? "";
             ReviewerNotes = Review.ReviewerNotes ?? "";
-            FinalDisposition = Review.FinalDisposition ?? Review.Recommendation;
+            FinalDisposition = Review.FinalDisposition;
             ComplianceSummary = _complianceSummaryService.Generate(BuildAuditReport(Review).VerificationResult);
             AssignedReviewer = Review.AssignedReviewer ?? "";
 
@@ -103,8 +109,7 @@ namespace LabelVerify.Web.Pages.Reviews
             return File(System.Text.Encoding.UTF8.GetBytes(csv), "text/csv", $"Review_{id}.csv");
         }
 
-        private static ComplianceAuditReport BuildAuditReport(
-            ReviewSession review)
+        private static ComplianceAuditReport BuildAuditReport(ReviewSession review)
         {
             var approved = JsonSerializer.Deserialize<ApprovedProductProfile>(review.ApprovedProfileJson)!;
 
@@ -112,12 +117,24 @@ namespace LabelVerify.Web.Pages.Reviews
 
             return new ComplianceAuditReport
             {
+                ReviewId = review.Id,
+                BrandName = review.BrandName,
+                ReviewDateUtc = review.ReviewDateUtc,
+                WorkflowStatus = review.WorkflowStatus,
                 ReviewDate = review.ReviewDateUtc,
                 Recommendation = review.Recommendation,
                 OverallScore = review.OverallScore,
                 AiComplianceSummary = review.AiComplianceSummary,
                 ApprovedProfile = approved,
                 ProductionFacts = production,
+                AiRiskAssessment = review.AiRiskAssessment,
+                RiskScore = review.RiskScore,
+                RiskLevel = review.RiskLevel,
+                RiskFactors = review.RiskFactors,
+                ReviewerName = review.ReviewerName,
+                FinalDisposition = review.FinalDisposition,
+                ReviewerNotes = review.ReviewerNotes,
+                DispositionDateUtc = review.DispositionDateUtc,
                 VerificationResult = new VerificationResult
                 {
                     Recommendation = review.Recommendation,
@@ -233,6 +250,8 @@ namespace LabelVerify.Web.Pages.Reviews
 
         public async Task<IActionResult> OnPostDispositionAsync(Guid id)
         {
+            LoadReviewerOptions();
+            
             await _reviewQueryService.UpdateDispositionAsync(id, ReviewerName, FinalDisposition, ReviewerNotes);
             await _auditLogService.LogAsync(id, "DispositionUpdated", $"Disposition set to {FinalDisposition} by {ReviewerName}");
 
@@ -241,11 +260,33 @@ namespace LabelVerify.Web.Pages.Reviews
 
         public async Task<IActionResult> OnPostAssignAsync(Guid id)
         {
+            LoadReviewerOptions();
+            
             await _reviewQueryService.AssignReviewerAsync(id, AssignedReviewer);
 
             await _auditLogService.LogAsync(id, "ReviewAssigned", $"Assigned to {AssignedReviewer}");
 
             return RedirectToPage(new { id });
+        }
+
+        private void LoadReviewerOptions()
+        {
+            var users = _userManager.Users
+                .OrderBy(x => x.DisplayName)
+                .ThenBy(x => x.Email)
+                .ToList();
+
+            ReviewerOptions = [.. users
+                .Select(x => new SelectListItem
+                {
+                    Value = !string.IsNullOrWhiteSpace(x.DisplayName)
+                        ? x.DisplayName
+                        : x.Email,
+
+                    Text = !string.IsNullOrWhiteSpace(x.DisplayName)
+                        ? $"{x.DisplayName} ({x.Email})"
+                        : x.Email
+                })];
         }
     }
 }

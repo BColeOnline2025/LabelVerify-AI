@@ -89,11 +89,11 @@ namespace LabelVerify.Web.Services
                 .ToListAsync();
         }
 
-        public async Task<ReviewDashboardMetrics> GetMetricsAsync()
+        public async Task<ReviewDashboardMetrics> GetMetricsAsync(string currentUser)
         {
             var now = DateTime.UtcNow;
             var slaDays = 7;
-            var currentReviewer = "Brian Cole";
+            var currentReviewer = currentUser;
             var reviews = await _db.ReviewSessions.ToListAsync();
             var completedReviews = reviews.Where(x => x.ReviewStartedUtc != null && x.CompletedUtc != null).ToList();
             var completedWithTimes = reviews.Where(x => x.ReviewStartedUtc.HasValue && x.CompletedUtc.HasValue).ToList();

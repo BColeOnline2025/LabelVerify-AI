@@ -1,9 +1,11 @@
+using LabelVerify.Web.Data;
+using LabelVerify.Web.Models;
+using LabelVerify.Web.Options;
 using LabelVerify.Web.Rules;
 using LabelVerify.Web.Services;
 using LabelVerify.Web.Services.Interfaces;
 using LabelVerify.Web.Services.OCR;
-using LabelVerify.Web.Options;
-using LabelVerify.Web.Data;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Infrastructure;
 
@@ -62,6 +64,22 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 maxRetryDelay: TimeSpan.FromSeconds(10),
                 errorNumbersToAdd: null);
         }));
+builder.Services.AddDefaultIdentity<LabelVerify.Web.Models.ApplicationUser>(options =>
+    {
+        options.SignIn.RequireConfirmedAccount = false;
+    })
+    .AddRoles<IdentityRole>()
+    .AddEntityFrameworkStores<ApplicationDbContext>();
+builder.Services.AddRazorPages(options =>
+{
+    options.Conventions.AuthorizeFolder("/Reviews");
+    options.Conventions.AuthorizePage("/ColaReview");
+}); 
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath = "/Identity/Account/Login";
+    options.AccessDeniedPath = "/Identity/Account/AccessDenied";
+});
 
 var app = builder.Build();
 
@@ -86,7 +104,20 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
-app.UseAuthorization();
+app.UseAuthentication();
+app.UseAuthorization(); 
 app.MapStaticAssets();
+app.MapGet("/", context =>
+{
+    context.Response.Redirect("/Reviews/Dashboard");
+
+    return Task.CompletedTask;
+});
 app.MapRazorPages().WithStaticAssets();
+
+using (var scope = app.Services.CreateScope())
+{
+    await IdentitySeed.SeedAsync(scope.ServiceProvider);
+}
+
 app.Run();

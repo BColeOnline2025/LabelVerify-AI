@@ -4,12 +4,8 @@
 <div class="container mt-4">
     <h2>Review Details</h2>
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <a asp-page="./Index" class="btn btn-secondary">
-            ← Back to Review History
-        </a>
         <div>
-            <strong>Review ID:</strong>
-            @Model.Review?.Id
+            <strong>Review ID:</strong>&nbsp;@Model.Review?.Id
         </div>
     </div>
 
@@ -19,6 +15,7 @@
             <a asp-page-handler="ExportPdf" asp-route-id="@Model.Review.Id" class="btn btn-success">Export PDF</a>
             <a asp-page-handler="ExportCsv" asp-route-id="@Model.Review.Id" class="btn btn-success">Export CSV</a>
             <a asp-page-handler="ExportZip" asp-route-id="@Model.Review.Id" class="btn btn-success">Export ZIP</a>
+            <a asp-page="./Index" class="btn btn-secondary">← Back to Review History</a>
         </div>
         <div class="row mb-4">
             <div class="col-md-4">
@@ -154,16 +151,29 @@
                 <strong>Reviewer Decision</strong>
             </div>
             <div class="card-body">
+                <form method="post" asp-page-handler="Assign" asp-route-id="@Model.Review.Id">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                Assigned Reviewer
+                            </label>
+                            <select asp-for="AssignedReviewer" asp-items="Model.ReviewerOptions" class="form-select">
+                                <option value="">-- Select reviewer --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-3">
+                        Assign Reviewer
+                    </button>
+                </form><hr />
                 <form method="post" asp-page-handler="Disposition">
                     <input type="hidden" name="id" value="@Model.Review.Id" />
+                    <input asp-for="ReviewerName" hidden class="form-control" />
                     <div class="row">
-                        <div class="col-md-3">
-                            <label class="form-label">Reviewer</label>
-                            <input asp-for="ReviewerName" class="form-control" />
-                        </div>
                         <div class="col-md-3">
                             <label class="form-label">Final Disposition</label>
                             <select asp-for="FinalDisposition" class="form-select">
+                                <option value="">-- Select final disposition --</option>
                                 <option>Approve</option>
                                 <option>Review</option>
                                 <option>Reject</option>
@@ -175,7 +185,7 @@
                         <textarea asp-for="ReviewerNotes" rows="4" class="form-control"></textarea>
                     </div>
                     <div class="mt-3">
-                        <button type="submit" class="btn btn-success">
+                        <button type="submit" class="btn btn-primary mt-3">
                             Save Decision
                         </button>
                     </div>
@@ -284,26 +294,6 @@
                         <a href="@Model.ProductionLabelDownloadUrls[i]" target="_blank" class="btn btn-outline-secondary me-2 mb-2">Label @(i + 1)</a>
                     }
                 }
-            </div>
-        </div>
-        <div class="card mb-4">
-            <div class="card-header">
-                <strong>Assignment</strong>
-            </div>
-            <div class="card-body">
-                <form method="post" asp-page-handler="Assign" asp-route-id="@Model.Review.Id">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <label class="form-label">
-                                Assigned Reviewer
-                            </label>
-                            <input asp-for="AssignedReviewer" class="form-control" />
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-primary mt-3">
-                        Assign Reviewer
-                    </button>
-                </form>
             </div>
         </div>
         <div class="card mb-4">

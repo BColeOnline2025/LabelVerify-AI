@@ -21,6 +21,94 @@ namespace LabelVerify.Web.Services
 
                     page.Content().Column(col =>
                     {
+                        col.Item()
+                            .AlignCenter()
+                            .Text("TTB Label Review Package")
+                            .FontSize(24)
+                            .Bold();
+
+                        col.Item()
+                            .AlignCenter()
+                            .Text($"Review ID: {report.ReviewId}")
+                            .FontSize(12);
+
+                        col.Item().PaddingVertical(10);
+
+                        col.Item().Text("Executive Summary")
+                            .FontSize(16)
+                            .Bold();
+
+                        col.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn();
+                                columns.RelativeColumn();
+                            });
+
+                            AddRow(table, "Brand Name", report.BrandName ?? "N/A");
+                            AddRow(table, "Recommendation", report.Recommendation);
+                            AddRow(table, "Risk Level", report.RiskLevel ?? "N/A");
+                            AddRow(table, "Risk Score", report.RiskScore.ToString());
+                            AddRow(table, "Reviewer", report.ReviewerName ?? "Unassigned");
+                            AddRow(table, "Review Date", report.ReviewDateUtc.ToString("g"));
+                        });
+
+                        var riskColor =
+                            report.RiskLevel == "High"
+                                ? Colors.Red.Lighten2
+                                : report.RiskLevel == "Medium"
+                                    ? Colors.Orange.Lighten2
+                                    : Colors.Green.Lighten2;
+
+                        col.Item()
+                            .Background(riskColor)
+                            .Padding(12)
+                            .Text($"Risk Level: {report.RiskLevel} ({report.RiskScore})")
+                            .FontSize(18)
+                            .Bold();
+
+                        col.Item().PaddingTop(10);
+
+                        col.Item().Text("AI Executive Summary")
+                            .FontSize(16)
+                            .Bold();
+
+                        col.Item()
+                            .Background(Colors.Blue.Lighten5)
+                            .Padding(12)
+                            .Text(
+                                string.IsNullOrWhiteSpace(report.AiComplianceSummary)
+                                    ? "No AI summary available."
+                                    : report.AiComplianceSummary)
+                            .FontSize(10);
+
+                        col.Item().PaddingTop(10);
+
+                        col.Item().Text("Disposition Snapshot")
+                            .FontSize(16)
+                            .Bold();
+
+                        col.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn();
+                                columns.RelativeColumn();
+                            });
+
+                            AddRow(table, "Final Disposition",
+                                report.FinalDisposition ?? "Pending");
+
+                            AddRow(table, "Disposition Date",
+                                report.DispositionDateUtc?.ToString("g") ?? "Pending");
+
+                            AddRow(table, "Workflow Status",
+                                report.WorkflowStatus ?? "Open");
+                        });
+
+                        col.Item().PageBreak();
+                        
                         col.Spacing(10);
 
                         col.Item().Text($"Review Date: {report.ReviewDate:u}");
@@ -44,6 +132,46 @@ namespace LabelVerify.Web.Services
                             col.Item().LineHorizontal(1);
                         }
 
+                        col.Item().Text("Risk Assessment").FontSize(14).Bold();
+
+                        col.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn();
+                                columns.RelativeColumn();
+                            });
+
+                            AddRow(table, "Risk Score", report.RiskScore.ToString());
+                            AddRow(table, "Risk Level", report.RiskLevel ?? "N/A");
+                            AddRow(table, "Risk Factors", report.RiskFactors ?? "N/A");
+                        });
+
+                        if (!string.IsNullOrWhiteSpace(report.AiRiskAssessment))
+                        {
+                            col.Item()
+                                .Background(Colors.Orange.Lighten5)
+                                .Padding(10)
+                                .Text(report.AiRiskAssessment)
+                                .FontSize(10);
+                        }
+
+                        col.Item().Text("Reviewer Decision").FontSize(14).Bold();
+
+                        col.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn();
+                                columns.RelativeColumn();
+                            });
+
+                            AddRow(table, "Reviewer", report.ReviewerName ?? "N/A");
+                            AddRow(table, "Final Disposition", report.FinalDisposition ?? "N/A");
+                            AddRow(table, "Disposition Date", report.DispositionDateUtc?.ToString("u") ?? "N/A");
+                            AddRow(table, "Reviewer Notes", report.ReviewerNotes ?? "N/A");
+                        });
+                        
                         col.Item().Text("Approved Product Profile").FontSize(14).Bold();
 
                         col.Item().Table(table =>
@@ -91,6 +219,16 @@ namespace LabelVerify.Web.Services
                                 Cell(table, check.SourceLabel);
                                 Cell(table, check.Status);
                                 Cell(table, check.WasSkipped ? "N/A" : $"{check.ConfidenceScore}%");
+
+                                if (!string.IsNullOrWhiteSpace(check.AiAnalysis))
+                                {
+                                    table.Cell()
+                                        .ColumnSpan(6)
+                                        .Background(Colors.Grey.Lighten4)
+                                        .Padding(6)
+                                        .Text($"AI Analysis: {check.AiAnalysis}")
+                                        .FontSize(9);
+                                }
                             }
                         });
                     });

@@ -25,22 +25,13 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
+                            <a class="nav-link text-dark" asp-area="" asp-page="/Reviews/Dashboard">Dashboard</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-page="/ColaReview">COLA Package Review</a>
+                            <a class="nav-link text-dark" asp-page="/ColaReview">New Review</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-page="/CompareLabels">Compare Labels</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-page="/Single">Single Review</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-page="/Batch">Batch Review</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-page="/Reviews/WorkQueue">Reviewer Work Queue</a>
+                            <a class="nav-link text-dark" asp-page="/Reviews/WorkQueue">Work Queue</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-page="/Reviews/Index">Review History</a>
@@ -50,6 +41,15 @@
                         </li>
                     </ul>
                 </div>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <span class="text-muted me-3">@User.Identity.Name</span>
+                    <form asp-area="Identity" asp-page="/Account/Logout" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-outline-secondary btn-sm">
+                            Logout
+                        </button>
+                    </form>
+                }
             </div>
         </nav>
     </header>
