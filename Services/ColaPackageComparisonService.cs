@@ -1,10 +1,18 @@
 ﻿using FuzzySharp;
 using LabelVerify.Web.Models;
+using LabelVerify.Web.Services.Compliance;
 
 namespace LabelVerify.Web.Services
 {
-    public class ColaPackageComparisonService
+    public class ColaPackageComparisonService(GovernmentWarningValidator governmentWarningValidator, 
+        AlcoholContentValidator alcoholContentValidator, SulfitesValidator sulfitesValidator,
+        GovernmentWarningLayoutValidator governmentWarningLayoutValidator)
     {
+        private readonly GovernmentWarningValidator _governmentWarningValidator = governmentWarningValidator;
+        private readonly AlcoholContentValidator _alcoholContentValidator = alcoholContentValidator;
+        private readonly SulfitesValidator _sulfitesValidator = sulfitesValidator;
+        private readonly GovernmentWarningLayoutValidator _governmentWarningLayoutValidator = governmentWarningLayoutValidator;
+
         public VerificationResult Compare(ApprovedProductProfile approved, LabelFacts production)
         {
             var checks = new List<FieldCheckResult>
@@ -12,14 +20,16 @@ namespace LabelVerify.Web.Services
                 CompareFuzzy("Brand Name", approved.BrandName, production.BrandName),
                 CompareFuzzy("Fanciful Name", approved.FancifulName, production.FancifulName, allowSkip: true),
                 CompareFuzzy("Class / Type", approved.ClassType, production.ClassType),
-                CompareExact("Alcohol Content", approved.AlcoholContent, production.AlcoholContent),
-                CompareExact("Net Contents", approved.NetContents, production.NetContents),
-                ComparePresence("Government Warning", approved.GovernmentWarning, production.GovernmentWarning),
                 CompareFuzzy("Producer Statement", approved.ProducerStatement, production.ProducerStatement, allowSkip: true),
                 CompareFuzzy("Country of Origin", approved.CountryOfOrigin, production.CountryOfOrigin, allowSkip: true),
                 CompareFuzzy("Appellation", approved.Appellation, production.Appellation, allowSkip: true),
                 CompareFuzzy("Varietal", approved.Varietal, production.Varietal, allowSkip: true)
             };
+
+            checks.AddRange(_governmentWarningValidator.Validate(production.GovernmentWarning));
+            checks.Add(_governmentWarningLayoutValidator.ValidateHeaderFontSize(production.GovernmentWarningHeaderHeight));
+            checks.AddRange(_alcoholContentValidator.Validate(approved.AlcoholContent, production.AlcoholContent));
+            checks.AddRange(_sulfitesValidator.Validate(approved.SulfitesStatement, production.SulfitesStatement));
 
             var scoredChecks = checks
                 .Where(x => !x.WasSkipped)
@@ -30,10 +40,10 @@ namespace LabelVerify.Web.Services
                 : 0;
 
             var hasFail = scoredChecks.Any(x => string.Equals(x.Status, "Fail", StringComparison.OrdinalIgnoreCase));
-
             var hasReview = scoredChecks.Any(x => string.Equals(x.Status, "Review", StringComparison.OrdinalIgnoreCase));
-
             var recommendation = hasFail ? "Reject" : hasReview ? "Review" : "Approve";
+
+            recommendation = ApplyRecommendationOverrides(recommendation, checks);
 
             return new VerificationResult
             {
@@ -41,6 +51,24 @@ namespace LabelVerify.Web.Services
                 OverallScore = overallScore,
                 Recommendation = recommendation
             };
+        }
+
+        private static string ApplyRecommendationOverrides(string recommendation, List<FieldCheckResult> checks)
+        {
+            var criticalFailures = new[]
+            {
+                "Government Warning",
+                "Alcohol Content",
+                "Net Contents",
+                "Sulfites"
+            };
+
+            if (checks.Any(c => criticalFailures.Any(cf => c.FieldName.StartsWith(cf)) && c.Status == "Fail"))
+            {
+                return "Fail";
+            }
+
+            return recommendation;
         }
 
         private static FieldCheckResult CompareExact(string fieldName, string approved, string production)

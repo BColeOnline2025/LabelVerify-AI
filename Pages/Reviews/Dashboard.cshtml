@@ -3,7 +3,7 @@
 @using System.Text.Json
 
 @{
-    var currentUser = User.Identity?.Name ?? "Unknown";
+    var currentUser = Model.CurrentUser;
 }
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -100,7 +100,7 @@
             </div>
 
             <div class="col-md-3">
-                <div class="card h-100 border-info text-center">
+                <div class="card h-100 border-success text-center">
                     <div class="card-body">
                         <h6>Open Reviews</h6>
                         <h2>@Model.Metrics.TotalOpenReviews</h2>
@@ -109,7 +109,7 @@
             </div>
 
             <div class="col-md-3">
-                <div class="card h-100 border-secondary text-center">
+                <div class="card h-100 border-warning text-center">
                     <div class="card-body">
                         <h6>Average Review Time</h6>
                         <h3>@Model.Metrics.AverageReviewHours.ToString("0.0") Hours</h3>
@@ -130,23 +130,21 @@
         <!-- Row 3: Workflow KPIs -->
         <div class="row mb-4">
             <div class="col-md-3">
-                <div class="card h-100 border-secondary text-center">
+                <div class="card h-100 border-primary text-center">
                     <div class="card-body">
                         <h6>Submitted</h6>
                         <h2>@Model.Metrics.Submitted</h2>
                     </div>
                 </div>
             </div>
-
             <div class="col-md-3">
-                <div class="card h-100 border-primary text-center">
+                <div class="card h-100 border-success text-center">
                     <div class="card-body">
                         <h6>Assigned</h6>
                         <h2>@Model.Metrics.Assigned</h2>
                     </div>
                 </div>
             </div>
-
             <div class="col-md-3">
                 <div class="card h-100 border-warning text-center">
                     <div class="card-body">
@@ -155,7 +153,6 @@
                     </div>
                 </div>
             </div>
-
             <div class="col-md-3">
                 <div class="card h-100 border-danger text-center">
                     <div class="card-body">
@@ -169,32 +166,29 @@
         <!-- Row 4: Risk KPIs -->
         <div class="row mb-4">
             <div class="col-md-3">
-                <div class="card h-100 border-danger text-center">
+                <div class="card h-100 border-primary text-center">
                     <div class="card-body">
                         <h6>High Risk Reviews</h6>
                         <h2>@Model.Metrics.HighRiskReviews</h2>
                     </div>
                 </div>
             </div>
-
             <div class="col-md-3">
-                <div class="card h-100 border-warning text-center">
+                <div class="card h-100 border-success text-center">
                     <div class="card-body">
                         <h6>Medium Risk Reviews</h6>
                         <h2>@Model.Metrics.MediumRiskReviews</h2>
                     </div>
                 </div>
             </div>
-
             <div class="col-md-3">
-                <div class="card h-100 border-success text-center">
+                <div class="card h-100 border-warning text-center">
                     <div class="card-body">
                         <h6>Low Risk Reviews</h6>
                         <h2>@Model.Metrics.LowRiskReviews</h2>
                     </div>
                 </div>
             </div>
-
             <div class="col-md-3">
                 <div class="card h-100 border-danger text-center">
                     <div class="card-body">
@@ -207,7 +201,7 @@
 
         <!-- Row 5: Workflow Chart -->
         <div class="row mb-4">
-            <div class="col-md-6">
+            <div class="col-md-12">
                 <div class="card h-100">
                     <div class="card-header">
                         <strong>Workflow Status Distribution</strong>

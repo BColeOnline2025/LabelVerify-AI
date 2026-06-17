@@ -39,7 +39,7 @@ namespace LabelVerify.Web.Pages.Reviews
 
         public async Task OnGetAsync()
         {
-            var currentUser = User.Identity?.Name ?? "Unknown";
+            var currentUser = await _userManager.GetUserAsync(User);
             var criteria = new ReviewSearchCriteria
             {
                 Recommendation = Recommendation,
@@ -54,7 +54,7 @@ namespace LabelVerify.Web.Pages.Reviews
 
             var result = await _reviewQueryService.SearchPagedAsync(criteria, PageNumber, PageSize);
 
-            Metrics = await _reviewQueryService.GetMetricsAsync(currentUser);
+            Metrics = await _reviewQueryService.GetMetricsAsync(currentUser.DisplayName);
             Reviews = result.Items;
             TotalRecords = result.TotalRecords;
 
@@ -63,13 +63,8 @@ namespace LabelVerify.Web.Pages.Reviews
                 .ThenBy(x => x.Email)
                 .Select(x => new SelectListItem
                 {
-                    Value = !string.IsNullOrWhiteSpace(x.DisplayName)
-                        ? x.DisplayName
-                        : x.Email,
-
-                    Text = !string.IsNullOrWhiteSpace(x.DisplayName)
-                        ? $"{x.DisplayName} ({x.Email})"
-                        : x.Email
+                    Value = x.DisplayName,
+                    Text = x.DisplayName
                 })];
         }
     }

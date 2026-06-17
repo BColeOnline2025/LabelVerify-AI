@@ -11,8 +11,25 @@ namespace LabelVerify.Web.Services
             var failCount = result.Checks.Count(x => x.Status == "Fail");
             var reviewCount = result.Checks.Count(x => x.Status == "Review");
 
+            var governmentWarningFailCount = result.Checks.Count(x => x.FieldName.StartsWith("Government Warning") && x.Status == "Fail");
+            var sulfiteFailCount = result.Checks.Count(x => x.FieldName.StartsWith("Sulfites") && x.Status == "Fail");
+
             score += failCount * 20;
             score += reviewCount * 10;
+
+            if (governmentWarningFailCount > 0)
+            {
+                score += governmentWarningFailCount * 30;
+
+                factors.Add("Mandatory federal Government Warning violation detected");
+            }
+
+            if (sulfiteFailCount > 0)
+            {
+                score += 25;
+
+                factors.Add("Required sulfites statement missing");
+            }
 
             if (failCount > 0)
                 factors.Add($"{failCount} failed checks");

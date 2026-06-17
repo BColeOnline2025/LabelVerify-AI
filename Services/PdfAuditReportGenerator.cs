@@ -73,6 +73,20 @@ namespace LabelVerify.Web.Services
                         .FontSize(18)
                         .Bold();
 
+                    if (report.ComplianceInsights.Count != 0)
+                    {
+                        col.Item().Text("Compliance Insights").FontSize(14).Bold();
+
+                        foreach (var insight in report.ComplianceInsights)
+                        {
+                            col.Item()
+                                .Background(Colors.Yellow.Lighten4)
+                                .Padding(8)
+                                .Text(insight)
+                                .FontSize(10);
+                        }
+                    }
+
                     col.Item().Text("AI Executive Summary")
                         .FontSize(16)
                         .Bold();

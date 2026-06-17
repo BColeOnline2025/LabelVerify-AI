@@ -18,6 +18,7 @@ namespace LabelVerify.Web.Services
                 Varietal = ExtractVarietal(text),
                 ProducerStatement = ExtractProducerStatement(text),
                 FancifulName = ExtractFancifulName(text),
+                SulfitesStatement = ExtractSulfitesStatement(text),
                 CountryOfOrigin = ExtractCountryOfOrigin(text)
             };
         }
@@ -48,6 +49,18 @@ namespace LabelVerify.Web.Services
                 .FirstOrDefault();
 
             return candidate ?? string.Empty;
+        }
+
+        private static string ExtractSulfitesStatement(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return string.Empty;
+            }
+
+            var match = Regex.Match(text, @"CONTAINS\s+SULFITES", RegexOptions.IgnoreCase);
+
+            return match.Success ? match.Value.Trim() : string.Empty;
         }
 
         private static string ExtractClassType(string text)
@@ -111,9 +124,18 @@ namespace LabelVerify.Web.Services
 
         private static string ExtractGovernmentWarning(string text)
         {
-            return text.Contains("GOVERNMENT WARNING", StringComparison.OrdinalIgnoreCase)
-                ? "Present"
-                : string.Empty;
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return string.Empty;
+            }
+
+            var normalized = text.Replace("\r", " ").Replace("\n", " ");
+
+            normalized = Regex.Replace(normalized, @"\s+", " ").Trim();
+
+            var match = Regex.Match(normalized, @"(?<warning>government\s+warning\s*:.*?health\s+problems\.?)", RegexOptions.IgnoreCase);
+
+            return match.Success ? match.Groups["warning"].Value.Trim() : string.Empty;
         }
 
         private static string ExtractAppellation(string text)

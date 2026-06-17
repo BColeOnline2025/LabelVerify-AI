@@ -667,5 +667,173 @@ namespace LabelVerify.Web.Services
                 return $"Queue recommendation unavailable: {ex.Message}";
             }
         }
+
+        public async Task<string> GenerateReviewerCommentaryAsync(VerificationResult result)
+        {
+            if (!IsConfigured())
+            {
+                return "Azure OpenAI is not configured.";
+            }
+
+            try
+            {
+                var payload = new
+                {
+                    result.Recommendation,
+                    result.OverallScore,
+                    Checks = result.Checks
+                        .Where(x => x.Status != "Pass")
+                        .Select(x => new
+                        {
+                            x.FieldName,
+                            x.ExpectedValue,
+                            x.ActualValue,
+                            x.Status,
+                            x.Notes
+                        })
+                };
+
+                var prompt = await BuildPromptFromFileAsync("ReviewerCommentaryPrompt.txt", payload);
+
+                var endpoint = _options.Endpoint.TrimEnd('/');
+
+                var url = $"{endpoint}/openai/v1/chat/completions";
+
+                using var request = new HttpRequestMessage(HttpMethod.Post, url);
+
+                request.Headers.Add("api-key", _options.ApiKey);
+
+                var body = new
+                {
+                    model = _options.DeploymentName,
+                    messages = new[]
+                    {
+                    new
+                    {
+                        role = "system",
+                        content = "You are a senior TTB Label Specialist. Explain the significance of findings and likely regulatory implications."
+                    },
+                    new
+                    {
+                        role = "user",
+                        content = prompt
+                    }
+                },
+                    max_completion_tokens = 700,
+                    temperature = 0.2
+                };
+
+                request.Content = JsonContent.Create(body);
+
+                using var response = await _httpClient.SendAsync(request);
+
+                var responseBody = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new InvalidOperationException($"Azure OpenAI failed: {(int)response.StatusCode} {response.ReasonPhrase}. {responseBody}");
+                }
+
+                using var document =JsonDocument.Parse(responseBody);
+
+                var commentary = document.RootElement
+                    .GetProperty("choices")[0]
+                    .GetProperty("message")
+                    .GetProperty("content")
+                    .GetString();
+
+                if (string.IsNullOrWhiteSpace(commentary))
+                {
+                    return "AI reviewer commentary unavailable.";
+                }
+
+                commentary = string.Join(Environment.NewLine, commentary.Split('\n').Select(x => x.TrimEnd())).Trim();
+
+                return commentary;
+            }
+
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Reviewer commentary generation failed.");
+
+                return $"Reviewer commentary unavailable: {ex.Message}";
+            }
+        }
+
+        public async Task<string> GenerateCustomPromptAsync(string systemPrompt, string userPrompt, int maxTokens = 700)
+        {
+            if (!IsConfigured())
+            {
+                return "Azure OpenAI is not configured.";
+            }
+
+            try
+            {
+                var endpoint = _options.Endpoint.TrimEnd('/');
+                var url = $"{endpoint}/openai/v1/chat/completions";
+
+                using var request = new HttpRequestMessage(HttpMethod.Post, url);
+
+                request.Headers.Add("api-key", _options.ApiKey);
+
+                var body = new
+                {
+                    model = _options.DeploymentName,
+
+                    messages = new[]
+                    {
+                        new
+                        {
+                            role = "system",
+                            content = systemPrompt
+                        },
+
+                        new
+                        {
+                            role = "user",
+                            content = userPrompt
+                        }
+                    },
+                    max_completion_tokens = maxTokens,
+                    temperature = 0.2
+                };
+
+                request.Content = JsonContent.Create(body);
+
+                using var response = await _httpClient.SendAsync(request);
+
+                var responseBody = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new InvalidOperationException($"Azure OpenAI failed: {(int)response.StatusCode} " + $"{response.ReasonPhrase}. {responseBody}");
+
+                }
+
+                using var document = JsonDocument.Parse(responseBody);
+
+                var result = document.RootElement
+                    .GetProperty("choices")[0]
+                    .GetProperty("message")
+                    .GetProperty("content")
+                    .GetString();
+
+                if (string.IsNullOrWhiteSpace(result))
+                {
+                    return "Azure OpenAI returned an empty response.";
+                }
+
+                result = string.Join(Environment.NewLine, result.Split('\n').Select(x => x.TrimEnd())).Trim();
+
+                return result;
+            }
+
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Custom prompt generation failed.");
+
+                return $"Custom prompt generation failed: {ex.Message}";
+            }
+        }
     }
 }

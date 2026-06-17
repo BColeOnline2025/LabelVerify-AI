@@ -508,5 +508,15 @@ namespace LabelVerify.Web.Services
                 Values = [.. rawData.Select(x => x.Count)]
             };
         }
+
+        public async Task<List<ReviewSession>> GetAssignedReviewsAsync(string reviewer)
+        {
+            return await _db.ReviewSessions
+                .Where(x =>
+                    x.AssignedReviewer == reviewer &&
+                    !x.CompletedUtc.HasValue &&
+                    x.WorkflowStatus != "Completed")
+                .ToListAsync();
+        }
     }
 }

@@ -1,16 +1,18 @@
 using LabelVerify.Web.Models;
 using LabelVerify.Web.Services;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace LabelVerify.Web.Pages.Reviews
 {
     public class BatchPackageModel(ReviewBatchService reviewBatchService, ColaReviewOrchestrator colaReviewOrchestrator,
-        AzureBlobStorageService blobStorageService) : PageModel
+        AzureBlobStorageService blobStorageService, UserManager<ApplicationUser> userManager) : PageModel
     {
         private readonly ReviewBatchService _reviewBatchService = reviewBatchService;
         private readonly ColaReviewOrchestrator _colaReviewOrchestrator = colaReviewOrchestrator;
         private readonly AzureBlobStorageService _blobStorageService = blobStorageService;
+        private readonly UserManager<ApplicationUser> _userManager = userManager;
 
         public ReviewBatchPackage? Package { get; set; }
 
@@ -54,8 +56,8 @@ namespace LabelVerify.Web.Pages.Reviews
             {
                 await using var colaStream = await _blobStorageService.DownloadAsync(Package.ColaPackageBlobUrl);
 
-                var submittedBy = User.Identity?.Name ?? "Unknown";
-
+                var currentUser = await _userManager.GetUserAsync(User);
+                var submittedBy = currentUser.DisplayName;
                 var processed = await _colaReviewOrchestrator.ProcessAsync(colaStream, Package.ColaPackageFileName, ProductionLabels, submittedBy);
 
                 await _reviewBatchService.MarkPackageCompletedAsync(packageId, processed.ReviewSessionId);

@@ -1,7 +1,11 @@
-﻿@using Microsoft.Extensions.Options
+﻿@using LabelVerify.Web.Models
 @using LabelVerify.Web.Options
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.Extensions.Options
+
 @inject IOptions<ApplicationOptions> AppOptions
 @inject LabelVerify.Web.Services.ReviewBatchService ReviewBatchService
+@inject UserManager<ApplicationUser> _userManager
 
 <!DOCTYPE html>
 <html lang="en">
@@ -24,43 +28,41 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
-                @{var currentUser = User.Identity?.Name;
-
-                    var myQueueCount = User.Identity?.IsAuthenticated == true ? (await ReviewBatchService
-                        .GetAssignedPackagesAsync(currentUser!)).Count : 0;
+                @{var currentUser = await _userManager.GetUserAsync(User);
+                    var myQueueCount = await ReviewBatchService.GetMyWorkQueueCountAsync(currentUser.DisplayName);
                 }
 
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-page="/Reviews/Dashboard">Dashboard</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-page="/Reviews/MyWorkQueue">
-                                My&nbsp;Work&nbsp;Queue&nbsp;
-                                @if (myQueueCount > 0)
-                                {
-                                    <span class="badge bg-danger">@myQueueCount</span>
-                                }
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-page="/ColaReview">New&nbsp;Review</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-page="/Reviews/BatchCreate">New&nbsp;Batch&nbsp;Review</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-page="/Reviews/Batches">Review&nbsp;Batches</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-page="/Reviews/Index">Review&nbsp;History</a>
-                        </li>
-                    </ul>
-                </div>
                 @if (User.Identity?.IsAuthenticated == true)
                 {
-                    <span class="text-muted me-3">@User.Identity.Name</span>
+                    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                        <ul class="navbar-nav flex-grow-1">
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-page="/Reviews/Dashboard">Dashboard</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-page="/Reviews/MyWorkQueue">
+                                    My&nbsp;Work&nbsp;Queue&nbsp;
+                                    @if (myQueueCount > 0)
+                                    {
+                                        <span class="badge bg-danger">@myQueueCount</span>
+                                    }
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-page="/ColaReview">New&nbsp;Review</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-page="/Reviews/BatchCreate">New&nbsp;Batch&nbsp;Review</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-page="/Reviews/Batches">Review&nbsp;Batches</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-page="/Reviews/Index">Review&nbsp;History</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <span class="text-muted me-3">@currentUser.DisplayName</span>
                     <form asp-area="Identity" asp-page="/Account/Logout" method="post" class="d-inline">
                         <button type="submit" class="btn btn-outline-secondary btn-sm">
                             Logout

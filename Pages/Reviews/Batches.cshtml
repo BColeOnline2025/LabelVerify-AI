@@ -19,9 +19,9 @@
                     <th>Created</th>
                     <th>Created By</th>
                     <th>Status</th>
-                    <th>Total</th>
-                    <th>Completed</th>
-                    <th>Pending</th>
+                    <th class="text-center">Total</th>
+                    <th class="text-center">Completed</th>
+                    <th class="text-center">Pending</th>
                     <th></th>
                 </tr>
             </thead>
@@ -37,11 +37,11 @@
                         <td>@batch.CreatedUtc.ToLocalTime().ToString("g")</td>
                         <td>@batch.CreatedBy</td>
                         <td>@batch.Status</td>
-                        <td>@total</td>
-                        <td>@completed</td>
-                        <td>@pending</td>
+                        <td class="text-center">@total</td>
+                        <td class="text-center">@completed</td>
+                        <td class="text-center">@pending</td>
                         <td>
-                            <a asp-page="/Reviews/BatchDetails" asp-route-id="@batch.Id" class="btn btn-sm btn-primary">
+                            <a asp-page="/Reviews/BatchDetails" asp-route-id="@batch.Id" class="review-status-tile bg-primary text-white">
                                 Continue
                             </a>
                         </td>

@@ -1,25 +1,24 @@
-﻿using LabelVerify.Web.Services.Interfaces;
+﻿using LabelVerify.Web.Models;
+using LabelVerify.Web.Services.Interfaces;
 
 namespace LabelVerify.Web.Services.OCR
 {
     public class MockOcrService : IOcrService
     {
-        public Task<string> ExtractTextAsync(
-            Stream imageStream)
+        public Task<string> ExtractTextAsync(Stream documentStream)
         {
-            return Task.FromResult(
-                """
-                    OLD TOM DISTILLERY
+            return Task.FromResult("Mock OCR text");
+        }
 
-                    Kentucky Straight Bourbon Whiskey
+        public async Task<OcrResult> ExtractTextWithLayoutAsync(Stream documentStream)
+        {
+            var text = await ExtractTextAsync(documentStream);
 
-                    45% Alc./Vol. (90 Proof)
-
-                    750 mL
-
-                    GOVERNMENT WARNING:
-                    (1) According to the Surgeon General...
-                """);
+            return new OcrResult
+            {
+                Text = text,
+                GovernmentWarningHeaderHeight = 0
+            };
         }
     }
 }

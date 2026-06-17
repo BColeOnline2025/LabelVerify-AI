@@ -1,17 +1,19 @@
 using LabelVerify.Web.Models;
 using LabelVerify.Web.Services;
+using LabelVerify.Web.Services.Compliance;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using System.IO.Compression;
 using System.Text.Json;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace LabelVerify.Web.Pages.Reviews
 {
     public class DetailsModel(ReviewQueryService reviewQueryService, PdfAuditReportGenerator pdfAuditReportGenerator, 
         AzureBlobStorageService blobStorageService, ComplianceSummaryService complianceSummaryService,
-        ReviewAuditLogService auditLogService, UserManager<ApplicationUser> userManager) : PageModel
+        ReviewAuditLogService auditLogService, UserManager<ApplicationUser> userManager,
+        ComplianceInsightsService complianceInsightsService) : PageModel
     {
         private readonly UserManager<ApplicationUser> _userManager = userManager;
         private readonly ReviewQueryService _reviewQueryService = reviewQueryService;
@@ -19,6 +21,7 @@ namespace LabelVerify.Web.Pages.Reviews
         private readonly AzureBlobStorageService _blobStorageService = blobStorageService;
         private readonly ComplianceSummaryService _complianceSummaryService = complianceSummaryService;
         private readonly ReviewAuditLogService _auditLogService = auditLogService;
+        private readonly ComplianceInsightsService _complianceInsightsService = complianceInsightsService;
 
         public List<SelectListItem> ReviewerOptions { get; private set; }
         public ReviewSession? Review { get; set; }
@@ -36,6 +39,9 @@ namespace LabelVerify.Web.Pages.Reviews
         public string AssignedReviewer { get; set; } = "";
         [BindProperty(SupportsGet = true)]
         public Guid? ReturnBatchId { get; set; }
+        public VerificationResult VerificationResult { get; set; } = new();
+        public List<string> ComplianceInsights { get; set; } = [];
+        public List<ReviewerNoteTemplate> ReviewerNoteTemplates { get; set; } = [];
 
         public async Task<IActionResult> OnGetAsync(Guid id)
         {
@@ -48,6 +54,14 @@ namespace LabelVerify.Web.Pages.Reviews
                 return NotFound();
             }
 
+            if (!string.IsNullOrWhiteSpace(Review.VerificationResultJson))
+            {
+                VerificationResult = JsonSerializer.Deserialize<VerificationResult>(Review.VerificationResultJson) ?? new VerificationResult();
+            }
+
+            ReviewerNoteTemplates = BuildReviewerNoteTemplates(VerificationResult);
+            ComplianceInsights = _complianceInsightsService.Generate(VerificationResult);
+            
             if (!string.IsNullOrWhiteSpace(Review.ColaPackageBlobUrl))
             {
                 ColaPackageDownloadUrl = _blobStorageService.GenerateReadSasUrl(Review.ColaPackageBlobUrl);
@@ -289,6 +303,58 @@ namespace LabelVerify.Web.Pages.Reviews
                         ? $"{x.DisplayName} ({x.Email})"
                         : x.Email
                 })];
+        }
+
+        private static List<ReviewerNoteTemplate> BuildReviewerNoteTemplates(VerificationResult result)
+        {
+            var failedFields = result.Checks
+                .Where(x => x.Status == "Fail")
+                .Select(x => x.FieldName)
+                .ToList();
+
+            var templates = new List<ReviewerNoteTemplate>();
+
+            if (failedFields.Any(x => x.StartsWith("Government Warning")))
+            {
+                templates.Add(new ReviewerNoteTemplate
+                {
+                    Label = "Government Warning",
+                    CssClass = "btn-outline-danger",
+                    Note = "Government Warning statement does not conform to federally prescribed requirements. Please revise and resubmit."
+                });
+            }
+
+            if (failedFields.Any(x => x.StartsWith("Alcohol Content")))
+            {
+                templates.Add(new ReviewerNoteTemplate
+                {
+                    Label = "Alcohol Content",
+                    CssClass = "btn-outline-warning",
+                    Note = "Alcohol content does not match the approved COLA and should be corrected prior to approval."
+                });
+            }
+
+            if (failedFields.Any(x => x.StartsWith("Net Contents")))
+            {
+                templates.Add(new ReviewerNoteTemplate
+                {
+                    Label = "Net Contents",
+                    CssClass = "btn-outline-warning",
+                    Note = "Net contents declaration differs from the approved COLA. Please correct the production label."
+                });
+            }
+
+            if (failedFields.Any(x => x.StartsWith("Sulfites")))
+            {
+                templates.Add(new ReviewerNoteTemplate
+                {
+                    Label = "Sulfites",
+                    CssClass = "btn-outline-warning",
+                    Note = "Required sulfites declaration was not found or does not match the required statement."
+                });
+            }
+
+            return templates;
         }
     }
 }

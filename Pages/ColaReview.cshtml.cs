@@ -1,10 +1,11 @@
 using LabelVerify.Web.Models;
 using LabelVerify.Web.Services;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc.Rendering;
+using LabelVerify.Web.Services.Compliance;
 using LabelVerify.Web.ViewModels;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Caching.Memory;
 using System.IO.Compression;
 
@@ -12,7 +13,8 @@ namespace LabelVerify.Web.Pages
 {
     public class ColaReviewModel(IMemoryCache memoryCache, PdfAuditReportGenerator pdfAuditReportGenerator,
         ILogger<ColaReviewModel> logger, ReviewAuditLogService auditLogService, UserManager<ApplicationUser> userManager,
-        ReviewQueryService reviewQueryService, ColaReviewOrchestrator colaReviewOrchestrator) : PageModel
+        ReviewQueryService reviewQueryService, ColaReviewOrchestrator colaReviewOrchestrator,
+        ComplianceInsightsService complianceInsightsService) : PageModel
     {
         private readonly IMemoryCache _memoryCache = memoryCache;
         private readonly ILogger<ColaReviewModel> _logger = logger;
@@ -21,6 +23,7 @@ namespace LabelVerify.Web.Pages
         private readonly ColaReviewOrchestrator _colaReviewOrchestrator = colaReviewOrchestrator;
         private readonly PdfAuditReportGenerator _pdfAuditReportGenerator = pdfAuditReportGenerator;
         private readonly UserManager<ApplicationUser> _userManager = userManager;
+        private readonly ComplianceInsightsService _complianceInsightsService = complianceInsightsService;
 
         [BindProperty]
         public ColaReviewUploadViewModel Input { get; set; } = new();
@@ -41,19 +44,23 @@ namespace LabelVerify.Web.Pages
         public string? FinalDisposition { get; set; } = string.Empty;
         public List<SelectListItem> ReviewerOptions { get; set; } = [];
 
-        public void OnGet()
+        public async Task OnGetAsync()
         {
             LoadReviewers();
 
-            ReviewerName = User.Identity?.Name;
+            var currentUser = await _userManager.GetUserAsync(User);
+            
+            ReviewerName = currentUser.DisplayName;
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
             LoadReviewers();
 
-            ReviewerName = User.Identity?.Name;
-            
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            ReviewerName = currentUser.DisplayName;
+
             _logger.LogInformation("COLA review started.");
 
             if (Input.ColaPackagePdf == null || Input.ColaPackagePdf.Length == 0)
@@ -85,6 +92,7 @@ namespace LabelVerify.Web.Pages
                 ReviewId = processed.ReviewSessionId.ToString();
                 FinalDisposition = Result.Recommendation;
                 ExportCacheId = Guid.NewGuid().ToString("N");
+                ReviewerNotes = string.Join(Environment.NewLine + Environment.NewLine, _complianceInsightsService.Generate(Result));
 
                 _memoryCache.Set(ExportCacheId, processed.AuditReport, TimeSpan.FromMinutes(30));
 
@@ -282,13 +290,11 @@ namespace LabelVerify.Web.Pages
         private void LoadReviewers()
         {
             ReviewerOptions = [.. _userManager.Users
-                .OrderBy(x => x.UserName)
+                .OrderBy(x => x.DisplayName)
                 .Select(x => new SelectListItem
                 {
-                    Value = x.UserName!,
-                    Text = string.IsNullOrWhiteSpace(x.Email)
-                        ? x.UserName!
-                        : $"{x.UserName} ({x.Email})"
+                    Value = x.DisplayName,
+                    Text = x.DisplayName
                 })];
         }
     }

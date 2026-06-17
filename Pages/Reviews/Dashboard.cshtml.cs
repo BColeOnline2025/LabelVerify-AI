@@ -1,5 +1,6 @@
 using LabelVerify.Web.Models;
 using LabelVerify.Web.Services;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -7,13 +8,15 @@ namespace LabelVerify.Web.Pages.Reviews
 {
     public class DashboardModel(DashboardAnalyticsService dashboardAnalyticsService, 
         ReviewQueryService reviewQueryService, MonthlyComplianceReportService monthlyComplianceReportService,
-        MonthlyCompliancePdfGenerator monthlyCompliancePdfGenerator) : PageModel
+        MonthlyCompliancePdfGenerator monthlyCompliancePdfGenerator, UserManager<ApplicationUser> userManager) : PageModel
     {
         private readonly DashboardAnalyticsService _dashboardAnalyticsService = dashboardAnalyticsService;
         private readonly ReviewQueryService _reviewQueryService = reviewQueryService;
         private readonly MonthlyComplianceReportService _monthlyComplianceReportService = monthlyComplianceReportService;
         private readonly MonthlyCompliancePdfGenerator _monthlyCompliancePdfGenerator = monthlyCompliancePdfGenerator;
+        private readonly UserManager<ApplicationUser> _userManager = userManager;
 
+        public string CurrentUser{ get; set; } = string.Empty;
         [BindProperty(SupportsGet = true)]
         public ReviewDashboardMetrics Metrics { get; set; } = new();
         public ChartData WorkflowChart { get; set; } = new();
@@ -27,7 +30,9 @@ namespace LabelVerify.Web.Pages.Reviews
 
         public async Task OnGetAsync()
         {
-            var currentUser = User.Identity?.Name ?? "Unknown";
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            CurrentUser = currentUser.DisplayName;
             var workflowCounts = await _dashboardAnalyticsService.GetWorkflowStatusCountsAsync();
 
             WorkflowChart = new ChartData
@@ -36,7 +41,7 @@ namespace LabelVerify.Web.Pages.Reviews
                 Values = [.. workflowCounts.Values]
             };
 
-            Metrics = await _reviewQueryService.GetMetricsAsync(currentUser);
+            Metrics = await _reviewQueryService.GetMetricsAsync(CurrentUser);
             MonthlyReviewChart = await _dashboardAnalyticsService.GetMonthlyReviewCountsAsync();
             TopFailureChart = await _dashboardAnalyticsService.GetTopFailureReasonsChartAsync();
             ReviewerProductivityChart = await _dashboardAnalyticsService.GetReviewerProductivityChartAsync();
@@ -58,9 +63,11 @@ namespace LabelVerify.Web.Pages.Reviews
 
         public async Task<IActionResult> OnGetMonthlyReportAsync()
         {
-            var currentUser = User.Identity?.Name ?? "Unknown";
+            var currentUser = await _userManager.GetUserAsync(User);
 
-            var report = await _monthlyComplianceReportService.GenerateAsync(currentUser);
+            CurrentUser = currentUser.DisplayName;
+
+            var report = await _monthlyComplianceReportService.GenerateAsync(CurrentUser);
             var pdf = _monthlyCompliancePdfGenerator.Generate(report);
 
             return File(pdf, "application/pdf", $"ComplianceReport_{DateTime.UtcNow:yyyyMMdd}.pdf");

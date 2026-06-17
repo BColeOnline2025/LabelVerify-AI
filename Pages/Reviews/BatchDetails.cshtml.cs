@@ -19,11 +19,11 @@ namespace LabelVerify.Web.Pages.Reviews
         {
             Batch = await _reviewBatchService.GetBatchAsync(id);
             ReviewerOptions = [.. _userManager.Users
-                .OrderBy(x => x.UserName)
+                .OrderBy(x => x.DisplayName)
                 .Select(x => new SelectListItem
                 {
-                    Text = x.UserName,
-                    Value = x.UserName
+                    Text = x.DisplayName,
+                    Value = x.DisplayName
                 })];
 
             if (Batch == null)

@@ -12,5 +12,7 @@
         public string Varietal { get; set; } = string.Empty;
         public string ProducerStatement { get; set; } = string.Empty;
         public string CountryOfOrigin { get; set; } = string.Empty;
+        public string SulfitesStatement { get; set; } = string.Empty;
+        public double GovernmentWarningHeaderHeight { get; set; }
     }
 }

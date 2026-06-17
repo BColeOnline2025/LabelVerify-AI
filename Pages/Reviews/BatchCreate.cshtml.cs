@@ -1,13 +1,17 @@
+using LabelVerify.Web.Models;
 using LabelVerify.Web.Services;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace LabelVerify.Web.Pages.Reviews
 {
-    public class BatchCreateModel(ReviewBatchService reviewBatchService, AzureBlobStorageService azureblobStorageService) : PageModel
+    public class BatchCreateModel(ReviewBatchService reviewBatchService, AzureBlobStorageService azureblobStorageService,
+        UserManager<ApplicationUser> userManager) : PageModel
     {
         private readonly ReviewBatchService _reviewBatchService = reviewBatchService;
         private readonly AzureBlobStorageService _azureblobStorageService = azureblobStorageService;
+        private readonly UserManager<ApplicationUser> _userManager = userManager;
 
         [BindProperty]
         public string BatchName { get; set; } = string.Empty;
@@ -47,8 +51,8 @@ namespace LabelVerify.Web.Pages.Reviews
                 uploadedPackages.Add((file.FileName, blobUrl.BlobUrl));
             }
 
-            var createdBy = User.Identity?.Name ?? "Unknown";
-
+            var currentUser = await _userManager.GetUserAsync(User);
+            var createdBy = currentUser.DisplayName;
             var batchId = await _reviewBatchService.CreateBatchAsync(BatchName, createdBy, uploadedPackages);
 
             return RedirectToPage("/Reviews/BatchDetails", new { id = batchId });

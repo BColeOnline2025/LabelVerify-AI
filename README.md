@@ -1,300 +1,664 @@
-﻿LabelVerify AI
-AI-Assisted Alcohol Label Verification Prototype for TTB Compliance Review
-Live Application
+﻿# LabelVerify AI
 
-Deployed Application URL:
+## AI-Assisted Alcohol Beverage Label Verification Platform
 
-https://labelverify-bcole-fffufzamd8a4bzbv.eastus-01.azurewebsites.net/
+---
 
-Source Repository
+## Overview
 
-GitHub Repository:
+LabelVerify AI is an AI-assisted alcohol beverage label verification platform designed to support reviewers in validating production labels against approved TTB COLA submissions.
+
+The application combines deterministic compliance validation, OCR extraction, risk scoring, workflow management, and Azure OpenAI generated narratives to provide a first-pass compliance review experience.
+
+The solution is intended to augment reviewer decision-making, reduce manual effort, identify material compliance issues, and improve consistency across reviews.
+
+---
+
+# Repository
+
+**Source Code Repository**
 
 https://github.com/BColeOnline2025/LabelVerify-AI
 
-Overview
+---
 
-LabelVerify AI is a proof-of-concept application designed to assist Alcohol and Tobacco Tax and Trade Bureau (TTB) compliance agents in reviewing alcohol beverage labels against application data.
+# Live Demonstration
 
-The prototype demonstrates how artificial intelligence, OCR (Optical Character Recognition), and automated validation can reduce the amount of manual verification required during the Certificate of Label Approval (COLA) review process.
+**Deployed Application**
 
-Rather than replacing compliance agents, the application is designed to augment the review process by automating routine field comparisons and highlighting discrepancies that require human judgment.
+https://labelverify-bcole-fffufzamd8a4bzbv.eastus-01.azurewebsites.net
 
-Business Problem
+### Demo Credentials
 
-The TTB reviews approximately 150,000 alcohol beverage label applications annually.
+Username
 
-Current reviews involve significant manual verification, including:
+```text
+rev1
+```
 
-Brand name matching
-Alcohol content validation
-Net contents verification
-Class/type verification
-Government warning verification
+Password
 
-Stakeholder interviews identified several challenges:
+```text
+Password123!
+```
 
-Manual Verification Burden
+---
 
-Agents spend substantial time comparing values on applications with values displayed on label artwork.
+# Business Problem
 
-Batch Processing Limitations
+TTB label reviewers manually compare approved COLA applications against production labels.
 
-Large importers may submit hundreds of labels simultaneously, requiring individual review.
+Common issues include:
 
-Performance Requirements
+* Incorrect alcohol content
+* Net contents discrepancies
+* Missing sulfites declarations
+* Government Warning formatting defects
+* Incomplete warning statements
+* Reviewer workload management
 
-Previous automation efforts failed due to long processing times. Stakeholders indicated that results must be returned in approximately five seconds or less.
+LabelVerify AI attempts to reduce repetitive manual review while maintaining deterministic and explainable compliance decisions.
 
-User Experience Requirements
+---
 
-The solution must remain simple and intuitive for users with varying technical proficiency.
+# Key Capabilities
 
-Real-World Variations
+### OCR Extraction
 
-Labels frequently contain formatting differences that may not represent actual compliance issues.
+Extracts text from:
 
-Examples:
+* PDF
+* PNG
+* JPG
+* JPEG
 
-STONE'S THROW
-Stone's Throw
+using:
 
-OLD TOM DISTILLERY
-OLD TOM DISTILLERY LLC
+* Azure Document Intelligence
+* Azure Vision OCR
+* Mock OCR provider
 
-These cases require intelligent matching rather than strict string comparisons.
+---
 
-Solution Overview
+### Compliance Validation
 
-The application provides two primary workflows:
+Deterministic validators include:
 
-Single Label Review
+| Validator          | Capability                   |
+| ------------------ | ---------------------------- |
+| Government Warning | Exact wording                |
+| Government Warning | Header capitalization        |
+| Government Warning | Statement completeness       |
+| Government Warning | Estimated visual prominence  |
+| Alcohol Content    | Value comparison             |
+| Alcohol Content    | Formatting validation        |
+| Net Contents       | Equivalent volume comparison |
+| Sulfites           | Required declaration         |
+| Brand Name         | Fuzzy comparison             |
+| Fanciful Name      | Comparison                   |
+| Country of Origin  | Presence validation          |
 
-Allows an agent to upload an individual label image and compare extracted label content against application data.
+---
 
-Features:
+# Government Warning Validation
 
-Image upload
-OCR text extraction
-Automated verification
-Confidence scoring
-Pass / Review / Fail recommendations
-Batch Review
+The Government Warning validator is intentionally strict and models reviewer behavior.
 
-Allows multiple labels to be processed simultaneously.
+Checks include:
 
-Features:
+### Header Format Validation
 
-Multi-file upload
-Batch processing dashboard
-Summary metrics
-Performance measurements
-Aggregate review recommendations
-Key Features
-Automated Label Verification
+Required
 
-The system validates:
+```text
+GOVERNMENT WARNING:
+```
 
-Brand Name
-Class / Type
+Rejects examples such as
+
+```text
+Government Warning:
+```
+
+```text
+Government warning:
+```
+
+```text
+Government Warning
+```
+
+---
+
+### Exact Text Validation
+
+Required statement
+
+```text
+GOVERNMENT WARNING:
+
+(1) According to the Surgeon General,
+women should not drink alcoholic beverages during
+pregnancy because of the risk of birth defects.
+
+(2) Consumption of alcoholic beverages impairs your ability
+to drive a car or operate machinery, and may cause health
+problems.
+```
+
+---
+
+### Completeness Validation
+
+Sentence 1
+
+```text
+According to the Surgeon General
+```
+
+Sentence 2
+
+```text
+Consumption of alcoholic beverages impairs your ability
+```
+
+Both statements must exist.
+
+---
+
+### Government Warning Prominence Validation
+
+LabelVerify estimates visual prominence of the Government Warning header using Azure Document Intelligence layout polygons.
+
+The OCR engine measures the height of the detected text bounding polygon.
+
+Example
+
+```text
+Government Warning Prominence
+
+
+Expected
+
+Estimated prominence >= 0.10
+
+
+Actual
+
+0.117
+
+
+Status
+
+PASS
+```
+
+Example
+
+```text
+Actual
+
+0.061
+
+
+Status
+
+REVIEW
+```
+
+This validation is intended as a reviewer assistance signal only.
+
+It does not replace physical measurement of label typography.
+
+---
+
+# AI Features
+
+Azure OpenAI provides
+
+### AI Compliance Summary
+
+Summarizes validation findings
+
+---
+
+### AI Risk Assessment
+
+Explains operational and regulatory risks
+
+---
+
+### Compliance Insights
+
+Provides reviewer-focused explanations
+
+---
+
+### Queue Recommendation
+
+Suggests review prioritization
+
+---
+
+### Monthly Compliance Reports
+
+Management-oriented summaries
+
+---
+
+# Risk Scoring
+
+Reviews receive a calculated risk score.
+
+Levels
+
+Low
+
+Medium
+
+High
+
+Examples of material findings
+
+Government Warning defects
+
+Alcohol discrepancies
+
+Missing sulfites declarations
+
+Net content mismatches
+
+---
+
+# Reviewer Productivity Features
+
+## Dynamic Reviewer Notes
+
+Reviewer note templates are generated automatically from failed validations.
+
+Examples
+
+Government Warning
+
 Alcohol Content
+
 Net Contents
-Government Warning Statement
-Fuzzy Brand Matching
 
-The prototype uses fuzzy string matching to identify likely matches despite formatting differences.
+Sulfites
 
-Examples:
+Selecting a button inserts standardized reviewer language.
 
-OLD TOM DISTILLERY
-OLD TOM DISTILLERY LLC
-STONE'S THROW
-Stone's Throw
+---
 
-This feature addresses concerns raised by experienced compliance agents regarding false mismatches.
+## Recommendation Override
 
-Confidence Scoring
+Reviewers may override recommendations.
 
-Each validation result includes a confidence score.
-
-Example:
-
-Brand Name
-Confidence: 90%
-
-Recommendation:
-Review Recommended
-Batch Processing
-
-Supports multi-file uploads to address large importer submissions.
-
-Performance Tracking
-
-Measures processing time for each label.
-
-Results include:
-
-Processing Time
-Average Processing Time
-Under 5 Seconds Indicator
-
-This directly addresses stakeholder performance requirements.
-
-Human-in-the-Loop Design
-
-The application intentionally preserves human review authority.
-
-Possible outcomes:
+Examples
 
 Pass
 
-High confidence match.
-
 Review
-
-Potential match requiring agent review.
 
 Fail
 
-Missing or inconsistent information requiring attention.
+Override reasons are preserved in the audit trail.
 
-Architecture
-High-Level Architecture
-Compliance Agent
-        │
-        ▼
-Razor Pages UI
-        │
-        ▼
-Verification Engine
-        │
- ┌──────┴──────┐
- ▼             ▼
-OCR Service   Rules Engine
- ▼             ▼
-OCR Text      Validation Rules
-        │
-        ▼
-Results Dashboard
-Technology Stack
-Front-End
-ASP.NET Core Razor Pages
-Bootstrap 5
-Back-End
-ASP.NET Core
-C#
-Dependency Injection
-Validation
-Custom Rules Engine
-FuzzySharp
-Cloud Platform
-Microsoft Azure
-Azure App Service
-Future Integration
-Azure AI Vision OCR
+---
+
+## Work Queue
+
+Displays
+
+Assigned Reviews
+
+Batch Reviews
+
+Completed Reviews
+
+Pending Reviews
+
+---
+
+# Single Review Workflow
+
+Step 1
+
+Navigate to
+
+Single Review
+
+---
+
+Step 2
+
+Upload
+
+Approved COLA Package
+
+---
+
+Step 3
+
+Upload
+
+Production Label Images
+
+---
+
+Step 4
+
+Enable
+
+Inline AI
+
+---
+
+Step 5
+
+Submit
+
+---
+
+System performs
+
+OCR Extraction
+
+↓
+
+Field Extraction
+
+↓
+
+Production Label Merge
+
+↓
+
+Compliance Validation
+
+↓
+
+Risk Assessment
+
+↓
+
+AI Summary Generation
+
+↓
+
+Persistence
+
+---
+
+Step 6
+
+Review Results
+
+Recommendation
+
+Risk Score
+
+Compliance Insights
+
+AI Summary
+
+Reviewer Decision
+
+Field Validation Results
+
+Audit Trail
+
+---
+
+# Batch Review Workflow
+
+Step 1
+
+Navigate to
+
+Batch Review
+
+---
+
+Step 2
+
+Upload
+
+COLA Packages
+
+ZIP Files
+
+Production Labels
+
+---
+
+Step 3
+
+Assign Reviewer
+
+---
+
+Step 4
+
+Submit Batch
+
+---
+
+System creates
+
+Review Batch
+
+Review Sessions
+
+Assignments
+
+Audit Records
+
+---
+
+Step 5
+
+Navigate to
+
+My Work Queue
+
+---
+
+Step 6
+
+Perform Review
+
+Approve
+
+Review
+
+Reject
+
+---
+
+# PDF Export
+
+The exported compliance report includes
+
+Review Metadata
+
+Risk Assessment
+
+AI Risk Assessment
+
+Compliance Insights
+
+Critical Compliance Findings
+
+Reviewer Notes
+
+Field Validation Results
+
+Source Documents
+
+Audit Trail
+
+---
+
+# Technology Stack
+
+| Component      | Technology                  |
+| -------------- | --------------------------- |
+| Framework      | ASP.NET Core 10 Razor Pages |
+| Language       | C#                          |
+| ORM            | Entity Framework Core       |
+| Database       | Azure SQL                   |
+| OCR            | Azure Document Intelligence |
+| OCR Fallback   | Azure Vision                |
+| AI             | Azure OpenAI                |
+| Storage        | Azure Blob Storage          |
+| Reporting      | QuestPDF                    |
+| Authentication | ASP.NET Identity            |
+| Hosting        | Azure App Service           |
+| UI             | Bootstrap 5                 |
+
+---
+
+# Setup Instructions
+
+## Prerequisites
+
+Visual Studio 2026
+
+.NET 10 SDK
+
+Azure Subscription
+
+Azure SQL Database
+
 Azure Blob Storage
-Azure Key Vault
-Application Insights
-Project Structure
-LabelVerify.Web
-│
-├── Models
-├── Services
-│   ├── OCR
-│   ├── Verification
-│   └── Interfaces
-│
-├── Rules
-│   ├── BrandNameRule
-│   ├── ClassTypeRule
-│   ├── AlcoholContentRule
-│   ├── NetContentsRule
-│   └── GovernmentWarningRule
-│
-├── ViewModels
-│
-├── Pages
-│   ├── Index
-│   └── Batch
-│
-└── wwwroot
-Stakeholder Requirements Traceability
-Stakeholder Requirement	Implementation
-Reduce manual verification	Automated rules engine
-Support batch processing	Multi-file batch upload
-Results within five seconds	Performance tracking dashboard
-Simple user interface	Razor Pages + Bootstrap
-Handle minor label variations	Fuzzy brand matching
-Human oversight retained	Pass / Review / Fail workflow
-Running Locally
-Prerequisites
-.NET SDK
-Visual Studio 2026 or later
-Clone Repository
-git clone https://github.com/YOUR-GITHUB-USERNAME/LabelVerify-AI.git
-Run Application
-cd LabelVerify.Web
 
-dotnet restore
+Azure OpenAI
 
+Azure Document Intelligence
+
+---
+
+## Clone Repository
+
+```bash
+git clone https://github.com/BColeOnline2025/LabelVerify-AI.git
+
+cd LabelVerify-AI
+```
+
+---
+
+## Configure User Secrets
+
+```json
+{
+  "AzureBlobStorage": {
+
+    "ConnectionString": ""
+
+  },
+
+  "AzureDocumentIntelligence": {
+
+    "Endpoint": "",
+
+    "ApiKey": ""
+
+  },
+
+  "AzureOpenAi": {
+
+    "Endpoint": "",
+
+    "ApiKey": "",
+
+    "DeploymentName": ""
+
+  }
+}
+```
+
+---
+
+## Apply Migrations
+
+```bash
+dotnet ef database update
+```
+
+---
+
+## Run
+
+```bash
 dotnet run
+```
 
-Application URL:
+or
 
-https://localhost:xxxx
-Deployment
+Press
 
-The application is currently deployed to Azure App Service.
+F5
 
-Deployment platform:
+in Visual Studio
 
-Azure App Service
-GitHub Repository
-GitHub Actions CI/CD
+---
 
-Deployment URL:
+# Assumptions
 
-https://labelverify-bcole-fffufzamd8a4bzbv.eastus-01.azurewebsites.net/
+Government Warning prominence estimation uses OCR bounding polygon heights.
 
-Assumptions
+Alcohol validation assumes accurate OCR extraction.
 
-For prototype purposes:
+Net contents currently support
 
-OCR is currently abstracted behind an OCR service interface.
-Mock OCR is used for predictable local testing.
-Label images are not retained after processing.
-Authentication and authorization are outside the scope of this prototype.
-Regulatory review authority remains with compliance agents.
-Future Enhancements
-Azure AI Vision Integration
+ML
 
-Replace Mock OCR with Azure AI Vision OCR.
+CL
 
-Azure Blob Storage
+L
 
-Store uploaded label images for processing and auditing.
+AI generated narratives are advisory only.
 
-Government Warning Validation
+Final disposition decisions remain under reviewer control.
 
-Validate exact wording, formatting, and capitalization.
+---
 
-Advanced Label Analysis
+# Future Enhancements
 
-Support:
+Government Warning millimeter-based font size validation
 
-Rotated labels
-Glare correction
-Perspective correction
-Application Integration
+Wine appellation validation
 
-Potential future integration with the TTB COLA system.
+Varietal validation
 
-Machine Learning Review Assistance
+Country of origin validation
 
-Identify common compliance issues and recommend corrective actions.
+Supervisor dashboard
 
-Conclusion
+SLA monitoring
 
-LabelVerify AI demonstrates how AI-assisted verification can reduce manual compliance review effort while preserving human oversight and regulatory judgment.
+TEFCA enabled ingestion
 
-The prototype addresses key stakeholder concerns including performance, usability, batch processing, and intelligent matching while providing a scalable foundation for future modernization efforts within the TTB label review process.
+Automatic workload balancing
+
+---
+
+# Architectural Approach
+
+Compliance decisions are driven by deterministic rules.
+
+Artificial intelligence is used only to explain findings, summarize results, and assist reviewers.
+
+At no point does AI independently approve or reject labels.
+
+This approach was selected to maintain explainability, repeatability, and alignment with regulatory review expectations.
+
+---
+
+Author
+
+Brian Cole
+
+2026

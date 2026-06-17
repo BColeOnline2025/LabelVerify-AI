@@ -22,5 +22,6 @@
         public string? BrandName { get; set; }
         public DateTime ReviewDateUtc { get; set; }
         public string? WorkflowStatus { get; set; }
+        public List<string> ComplianceInsights { get; set; } = [];
     }
 }

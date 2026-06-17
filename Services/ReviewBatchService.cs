@@ -119,5 +119,25 @@ namespace LabelVerify.Web.Services
                 .OrderBy(x => x.UploadedUtc)
                 .ToListAsync();
         }
+
+        public async Task<int> GetMyWorkQueueCountAsync(string reviewer)
+        {
+            var batchPackageCount =
+                await _db.ReviewBatchPackages
+                    .CountAsync(x =>
+                        x.AssignedReviewer == reviewer &&
+                        x.Status != "Completed");
+
+            var reviewSessionCount =
+                await _db.ReviewSessions
+                    .CountAsync(x =>
+                        x.AssignedReviewer == reviewer &&
+                        x.WorkflowStatus != "Completed" &&
+                        x.WorkflowStatus != "Approved" &&
+                        x.WorkflowStatus != "Rejected" &&
+                        !x.CompletedUtc.HasValue);
+
+            return batchPackageCount + reviewSessionCount;
+        }
     }
 }

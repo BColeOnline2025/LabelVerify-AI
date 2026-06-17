@@ -41,5 +41,6 @@
         public string? AiRiskAssessment { get; set; }
         public string? BrandName { get; set; }
         public string? VerificationResultJson { get; set; }
+        public string ReviewerCommentary { get; set; } = "";
     }
 }

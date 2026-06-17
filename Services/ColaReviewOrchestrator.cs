@@ -1,4 +1,5 @@
 ﻿using LabelVerify.Web.Models;
+using LabelVerify.Web.Services.Compliance;
 using LabelVerify.Web.Services.Interfaces;
 using System.Diagnostics;
 
@@ -10,7 +11,7 @@ namespace LabelVerify.Web.Services
         ReviewHistoryService reviewHistoryService, AzureBlobStorageService blobStorageService,
         ReviewAuditLogService auditLogService, AzureOpenAiSummaryService azureOpenAiSummaryService,
         RiskScoringService riskScoringService, ILogger<ColaReviewOrchestrator> logger,
-        IServiceScopeFactory serviceScopeFactory)
+        IServiceScopeFactory serviceScopeFactory, ComplianceInsightsService complianceInsightsService)
     {
         private readonly IColaPackageIngestionService _colaPackageIngestionService = colaPackageIngestionService;
         private readonly IOcrService _ocrService = ocrService;
@@ -24,6 +25,7 @@ namespace LabelVerify.Web.Services
         private readonly RiskScoringService _riskScoringService = riskScoringService;
         private readonly ILogger<ColaReviewOrchestrator> _logger = logger;
         private readonly IServiceScopeFactory _serviceScopeFactory = serviceScopeFactory;
+        private readonly ComplianceInsightsService _complianceInsightsService = complianceInsightsService;
 
         private const bool EnableInlineAi = false;
 
@@ -52,10 +54,7 @@ namespace LabelVerify.Web.Services
                 }
 
                 var colaUploadWatch = Stopwatch.StartNew();
-
-                var colaBlobUpload = await _blobStorageService.UploadAsync(colaPackageStream, "cola-packages",
-                    $"review-{reviewId}.pdf", "application/pdf");
-
+                var colaBlobUpload = await _blobStorageService.UploadAsync(colaPackageStream, "cola-packages", $"review-{reviewId}.pdf", "application/pdf");
                 var colaBlobUrl = colaBlobUpload.BlobUrl;
 
                 LogTiming("Upload COLA", colaUploadWatch);
@@ -96,14 +95,15 @@ namespace LabelVerify.Web.Services
                     {
                         await using var productionStream = file.OpenReadStream();
 
-                        var ocrText = await _ocrService.ExtractTextAsync(productionStream);
+                        var ocrResult = await _ocrService.ExtractTextWithLayoutAsync(productionStream);
+                        var facts = _labelFactExtractionService.Extract(ocrResult.Text);
 
-                        var facts = _labelFactExtractionService.Extract(ocrText);
+                        facts.GovernmentWarningHeaderHeight = ocrResult.GovernmentWarningHeaderHeight;
 
                         return new ProductionOcrResult
                         {
                             FileName = file.FileName,
-                            OcrText = ocrText,
+                            OcrText = ocrResult.Text,
                             Facts = facts
                         };
                     })
@@ -199,8 +199,9 @@ namespace LabelVerify.Web.Services
 
                     await Task.WhenAll(failureAnalysisTasks);
 
-                    aiResult = await _azureOpenAiSummaryService.GenerateComplianceSummaryAsync(
-                        approvedProfile, productionFacts, verificationResult);
+                    aiResult = await _azureOpenAiSummaryService.GenerateComplianceSummaryAsync(approvedProfile, productionFacts, verificationResult);
+
+                    var reviewerCommentary = await _azureOpenAiSummaryService.GenerateReviewerCommentaryAsync(verificationResult);
 
                     await _auditLogService.LogAsync(reviewId, "AISummaryGenerated", "Azure OpenAI compliance summary generated.");
 
@@ -265,6 +266,10 @@ namespace LabelVerify.Web.Services
                 auditReport.RiskScore = riskAssessment.RiskScore;
                 auditReport.RiskLevel = riskAssessment.RiskLevel;
                 auditReport.RiskFactors = riskAssessment.RiskFactors;
+
+                var complianceInsights = _complianceInsightsService.Generate(verificationResult);
+
+                auditReport.ComplianceInsights = complianceInsights;
                 
                 await _auditLogService.LogAsync(reviewId, "ReviewSaved", "Review successfully saved.");
 
@@ -314,6 +319,12 @@ namespace LabelVerify.Web.Services
             SetIfPresent(current.CountryOfOrigin, value => combined.CountryOfOrigin = value, "Country of Origin", fileName, productionFieldSources);
             SetIfPresent(current.Appellation, value => combined.Appellation = value, "Appellation", fileName, productionFieldSources);
             SetIfPresent(current.Varietal, value => combined.Varietal = value, "Varietal", fileName, productionFieldSources);
+            SetIfPresent(current.SulfitesStatement, value => combined.SulfitesStatement = value, "Sulfites Statement", fileName, productionFieldSources);
+
+            if (current.GovernmentWarningHeaderHeight > 0)
+            {
+                combined.GovernmentWarningHeaderHeight = current.GovernmentWarningHeaderHeight;
+            }
         }
 
         private void SetIfPresent(string value, Action<string> setValue, string fieldName, string fileName, Dictionary<string, string> productionFieldSources)
@@ -338,6 +349,21 @@ namespace LabelVerify.Web.Services
                 if (productionFieldSources.TryGetValue(check.FieldName, out var sourceLabel))
                 {
                     check.SourceLabel = sourceLabel;
+                }
+                else if (check.FieldName.StartsWith("Government Warning") &&
+                         productionFieldSources.TryGetValue("Government Warning", out var governmentWarningSource))
+                {
+                    check.SourceLabel = governmentWarningSource;
+                }
+                else if (
+                    check.FieldName.StartsWith("Alcohol Content") && productionFieldSources.TryGetValue("Alcohol Content", out var alcoholSource))
+                {
+                    check.SourceLabel = alcoholSource;
+                }
+                else if (
+                    check.FieldName.StartsWith("Sulfites") && productionFieldSources.TryGetValue("Sulfites Statement", out var sulfiteSource))
+                {
+                    check.SourceLabel = sulfiteSource;
                 }
                 else
                 {

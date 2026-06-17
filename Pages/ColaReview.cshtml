@@ -20,115 +20,41 @@
         </small>
     </div>
 
-    <form method="post" enctype="multipart/form-data">
-        <div asp-validation-summary="All" class="text-danger mb-3"></div>
-        <div class="mb-3">
-            <label class="form-label">Approved COLA Package PDF</label>
-            <input asp-for="Input.ColaPackagePdf" type="file" accept=".pdf,image/*" class="form-control" />
-            <span asp-validation-for="Input.ColaPackagePdf" class="text-danger"></span>
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Production Label Image</label>
-            <input asp-for="Input.ProductionLabelImages" type="file" accept="image/*,.pdf" class="form-control" multiple />
-        </div>
-        <button class="btn btn-primary btn-lg">
-            Extract Approved Profile
-        </button>
-    </form>
+    @if (Model.ApprovedProfile == null)
+    {
+        <form method="post" enctype="multipart/form-data">
+            <div asp-validation-summary="All" class="text-danger mb-3"></div>
+            <div class="mb-3">
+                <label class="form-label">Approved COLA Package PDF</label>
+                <input asp-for="Input.ColaPackagePdf" type="file" accept=".pdf*" class="form-control" />
+                <span asp-validation-for="Input.ColaPackagePdf" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Production Label Image</label>
+                <input asp-for="Input.ProductionLabelImages" type="file" accept="image/*" class="form-control" multiple />
+            </div>
+            <button class="btn btn-primary btn-lg">
+                Extract Approved Profile
+            </button>
+        </form>
+    }
 
     @if (Model.ApprovedProfile != null)
     {
         <hr />
         <h3>Approved Product Profile</h3>
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card dashboard-card border-primary">
-                    <div class="card-body text-center">
-                        <h6>Brand Name</h6>
-                        <h5>@DisplayValue(Model.ApprovedProfile.BrandName)</h5>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card dashboard-card border-info">
-                    <div class="card-body text-center">
-                        <h6>Product Type</h6>
-                        <h5>@DisplayValue(Model.ApprovedProfile.ProductType)</h5>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card dashboard-card border-success">
-                    <div class="card-body text-center">
-                        <h6>Alcohol Content</h6>
-                        <h5>@DisplayValue(Model.ApprovedProfile.AlcoholContent)</h5>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card dashboard-card border-secondary">
-                    <div class="card-body text-center">
-                        <h6>Net Contents</h6>
-                        <h5>@DisplayValue(Model.ApprovedProfile.NetContents)</h5>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <table class="table table-bordered table-striped">
-            <thead>
-                <tr>
-                    <th style="width:260px;">Field</th>
-                    <th>Extracted Value</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Brand Name</td>
-                    <td>@DisplayValue(Model.ApprovedProfile.BrandName)</td>
-                </tr>
-                <tr>
-                    <td>Fanciful Name</td>
-                    <td>@DisplayValue(Model.ApprovedProfile.FancifulName)</td>
-                </tr>
-                <tr>
-                    <td>Product Type</td>
-                    <td>@DisplayValue(Model.ApprovedProfile.ProductType)</td>
-                </tr>
-                <tr>
-                    <td>Class / Type</td>
-                    <td>@DisplayValue(Model.ApprovedProfile.ClassType)</td>
-                </tr>
-                <tr>
-                    <td>Alcohol Content</td>
-                    <td>@DisplayValue(Model.ApprovedProfile.AlcoholContent)</td>
-                </tr>
-                <tr>
-                    <td>Net Contents</td>
-                    <td>@DisplayValue(Model.ApprovedProfile.NetContents)</td>
-                </tr>
-                <tr>
-                    <td>Government Warning</td>
-                    <td>@DisplayValue(Model.ApprovedProfile.GovernmentWarning)</td>
-                </tr>
-                <tr>
-                    <td>Sulfites Statement</td>
-                    <td>@DisplayValue(Model.ApprovedProfile.SulfitesStatement)</td>
-                </tr>
-                <tr>
-                    <td>Producer Statement</td>
-                    <td>@DisplayValue(Model.ApprovedProfile.ProducerStatement)</td>
-                </tr>
-                <tr>
-                    <td>Country of Origin</td>
-                    <td>@DisplayValue(Model.ApprovedProfile.CountryOfOrigin)</td>
-                </tr>
-                <tr>
-                    <td>Formula Number</td>
-                    <td>@DisplayValue(Model.ApprovedProfile.FormulaNumber)</td>
-                </tr>
-            </tbody>
-        </table>
+        @if (!string.IsNullOrWhiteSpace(Model.ReviewId))
+        {
+            <a asp-page-handler="Export" asp-route-reviewId="@Model.ExportCacheId" class="btn btn-success mb-3">Export Compliance Report PDF</a>
 
+            <a asp-page-handler="ExportCsv" asp-route-reviewId="@Model.ExportCacheId" class="btn btn-success mb-3">Export CSV</a>
+
+            <a asp-page-handler="ExportDetailedCsv" asp-route-reviewId="@Model.ExportCacheId" class="btn btn-success mb-3">Export Detailed CSV</a>
+
+            <a asp-page-handler="ExportZip" asp-route-reviewId="@Model.ExportCacheId" class="btn btn-success mb-3">Export Review Package ZIP</a>
+
+            <a asp-page="/ColaReview" class="btn btn-secondary mb-3">← Back to New Review</a>
+        }
         @if (Model.ProcessingTimeMs > 0)
         {
             <div class="alert alert-info d-flex justify-content-between align-items-center">
@@ -164,212 +90,336 @@
                 </div>
             </div>
         }
-    }
-</div>
-
-@if (Model.Result != null)
-{
-    <hr />
-    @if (!string.IsNullOrWhiteSpace(Model.ReviewId))
-    {
-        <a asp-page-handler="Export" asp-route-reviewId="@Model.ExportCacheId" class="btn btn-success mb-3">Export Compliance Report PDF</a>
-
-        <a asp-page-handler="ExportCsv" asp-route-reviewId="@Model.ExportCacheId" class="btn btn-success mb-3">Export CSV</a>
-
-        <a asp-page-handler="ExportDetailedCsv" asp-route-reviewId="@Model.ExportCacheId" class="btn btn-success mb-3">Export Detailed CSV</a>
-
-        <a asp-page-handler="ExportZip" asp-route-reviewId="@Model.ExportCacheId" class="btn btn-success mb-3">Export Review Package ZIP</a>
-        <hr />
-    }
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body text-center">
-                    <h6>Approved Profile</h6>
-                    <div>@Model.ApprovedProfile?.BrandName</div>
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card dashboard-card border-primary">
+                    <div class="card-body text-center">
+                        <h6>Brand Name</h6>
+                        <h5>@DisplayValue(Model.ApprovedProfile.BrandName)</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card dashboard-card border-info">
+                    <div class="card-body text-center">
+                        <h6>Product Type</h6>
+                        <h5>@DisplayValue(Model.ApprovedProfile.ProductType)</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card dashboard-card border-success">
+                    <div class="card-body text-center">
+                        <h6>Alcohol Content</h6>
+                        <h5>@DisplayValue(Model.ApprovedProfile.AlcoholContent)</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card dashboard-card border-secondary">
+                    <div class="card-body text-center">
+                        <h6>Net Contents</h6>
+                        <h5>@DisplayValue(Model.ApprovedProfile.NetContents)</h5>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body text-center">
-                    <h6>Production Label</h6>
-                    <div>@Model.ProductionFacts?.BrandName</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body text-center">
-                    <h6>Recommendation</h6>
-                    <div>@Model.Result.Recommendation</div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <hr />
-    <h3>Verification Result</h3>
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card dashboard-card border-success">
-                <div class="card-body text-center">
-                    <h6>Overall Score</h6>
-                    <h2>@Model.Result.OverallScore%</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card dashboard-card border-primary">
-                <div class="card-body text-center">
-                    <h6>Recommendation</h6>
-                    <h2>@Model.Result.Recommendation</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card dashboard-card border-info">
-                <div class="card-body text-center">
-                    <h6>Checks Run</h6>
-                    <h2>@Model.Result.ExecutedChecks</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card dashboard-card border-secondary">
-                <div class="card-body text-center">
-                    <h6>Skipped Checks</h6>
-                    <h2>@Model.Result.SkippedChecks</h2>
-                </div>
-            </div>
-        </div>
-    </div>
-    <table class="table table-bordered table-striped mb-0" style="table-layout:fixed;">
-        <thead>
-            <tr>
-                <th style="width:180px;">Field</th>
-                <th>Approved</th>
-                <th>Production</th>
-                <th style="width:180px;">Found On</th>
-                <th style="width:120px; text-align:center;">Status</th>
-                <th style="width:120px; text-align:center;">Confidence</th>
-                <th>Notes</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var check in Model.Result.Checks)
-            {
-                <tr>
-                    <td>@check.FieldName</td>
-                    <td>@check.ExpectedValue</td>
-                    <td>@check.ActualValue</td>
-                    <td>@check.SourceLabel</td>
-                    <td class="status-cell p-0">
-                        @if (check.WasSkipped)
-                        {
-                            <div class="status-skipped">Skipped</div>
-                        }
-                        else if (check.Status == "Pass")
-                        {
-                            <div class="status-pass">Pass</div>
-                        }
-                        else if (check.Status == "Review")
-                        {
-                            <div class="status-review">Review</div>
-                        }
-                        else
-                        {
-                            <div class="status-fail">Fail</div>
-                        }
-                    </td>
-                    <td class="status-cell p-0">
-                        @if (check.WasSkipped)
-                        {
-                            <div class="confidence-skipped">
-                                N/A
-                            </div>
-                        }
-                        else if (check.ConfidenceScore >= 90)
-                        {
-                            <div class="confidence-high">
-                                @check.ConfidenceScore%
-                            </div>
-                        }
-                        else if (check.ConfidenceScore >= 75)
-                        {
-                            <div class="confidence-medium">
-                                @check.ConfidenceScore%
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="confidence-low">
-                                @check.ConfidenceScore%
-                            </div>
-                        }
-                    </td>
-                    <td class="notes-column">@check.Notes</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-    @if (Model.Result != null && !string.IsNullOrWhiteSpace(Model.ReviewId))
-    {
-        <div class="card mb-4 mt-4">
-            <div class="card-header">
-                <strong>Reviewer Decision</strong>
-            </div>
-            <div class="card-body">
-                <form method="post" asp-page-handler="Disposition" asp-route-id="@Model.ReviewId">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <label class="form-label">Reviewer</label>
-                            @if (User.IsInRole("Supervisor"))
-                                {
-                                    <select asp-for="ReviewerName" asp-items="Model.ReviewerOptions" class="form-select">
-                                    </select>
-                                }
-                                else
-                                {
-                                    <input asp-for="ReviewerName" class="form-control" readonly />
-                                }
-                            </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Final Disposition</label>
-                            <select asp-for="FinalDisposition" class="form-select">
-                                <option value="Approve">Approve</option>
-                                <option value="Review">Review</option>
-                                <option value="Reject">Reject</option>
-                            </select>
+        @if (Model.Result != null)
+        {
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h6>Approved Profile</h6>
+                            <div>@Model.ApprovedProfile?.BrandName</div>
                         </div>
                     </div>
-                    <div class="mt-3">
-                        <label class="form-label">Reviewer Notes</label>
-                        <textarea asp-for="ReviewerNotes" rows="4" class="form-control"></textarea>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h6>Production Label</h6>
+                            <div>@Model.ProductionFacts?.BrandName</div>
+                        </div>
                     </div>
-                    <button type="submit" class="btn btn-success mt-3">
-                        Save Final Decision
-                    </button>
-                </form>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h6>Recommendation</h6>
+                            <div>@Model.Result.Recommendation</div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
+            <hr />
+        }
+        @if (Model.Result != null)
+        {
+            <ul class="nav nav-tabs mb-4" id="dashboardTabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#results" type="button">
+                        Results
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#disposition" type="button">
+                        Disposition
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#data" type="button">
+                        Raw Extracted Data
+                    </button>
+                </li>
+            </ul>
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="results">
+                    <h3>Verification Result</h3>
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card dashboard-card border-success">
+                                <div class="card-body text-center">
+                                    <h6>Overall Score</h6>
+                                    <h2>@Model.Result.OverallScore%</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card dashboard-card border-primary">
+                                <div class="card-body text-center">
+                                    <h6>Recommendation</h6>
+                                    <h2>@Model.Result.Recommendation</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card dashboard-card border-info">
+                                <div class="card-body text-center">
+                                    <h6>Checks Run</h6>
+                                    <h2>@Model.Result.ExecutedChecks</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card dashboard-card border-secondary">
+                                <div class="card-body text-center">
+                                    <h6>Skipped Checks</h6>
+                                    <h2>@Model.Result.SkippedChecks</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <table class="table table-bordered table-striped mb-0" style="table-layout:fixed;">
+                        <thead>
+                            <tr>
+                                <th style="width:180px;">Field</th>
+                                <th>Approved</th>
+                                <th>Production</th>
+                                <th style="width:180px;">Found On</th>
+                                <th style="width:120px; text-align:center;">Status</th>
+                                <th style="width:120px; text-align:center;">Confidence</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var check in Model.Result.Checks)
+                            {
+                                <tr>
+                                    <td>@check.FieldName</td>
+                                    <td>@check.ExpectedValue</td>
+                                    <td>@check.ActualValue</td>
+                                    <td>@check.SourceLabel</td>
+                                    <td class="status-cell p-0">
+                                        @if (check.WasSkipped)
+                                        {
+                                            <div class="status-skipped">Skipped</div>
+                                        }
+                                        else if (check.Status == "Pass")
+                                        {
+                                            <div class="status-pass">Pass</div>
+                                        }
+                                        else if (check.Status == "Review")
+                                        {
+                                            <div class="status-review">Review</div>
+                                        }
+                                        else
+                                        {
+                                            <div class="status-fail">Fail</div>
+                                        }
+                                    </td>
+                                    <td class="status-cell p-0">
+                                        @if (check.WasSkipped)
+                                        {
+                                            <div class="confidence-skipped">
+                                                N/A
+                                            </div>
+                                        }
+                                        else if (check.ConfidenceScore >= 90)
+                                        {
+                                            <div class="confidence-high">
+                                                @check.ConfidenceScore%
+                                            </div>
+                                        }
+                                        else if (check.ConfidenceScore >= 75)
+                                        {
+                                            <div class="confidence-medium">
+                                                @check.ConfidenceScore%
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="confidence-low">
+                                                @check.ConfidenceScore%
+                                            </div>
+                                        }
+                                    </td>
+                                    <td class="notes-column">@check.Notes</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="tab-content">
+                <div class="tab-pane fade" id="disposition">
+                    @if (Model.Result != null && !string.IsNullOrWhiteSpace(Model.ReviewId))
+                    {
+                        <div class="card mb-4 mt-4">
+                            <div class="card-header">
+                                <strong>Reviewer Decision</strong>
+                            </div>
+                            <div class="card-body">
+                                <form method="post" asp-page-handler="Disposition" asp-route-id="@Model.ReviewId">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <label class="form-label">Reviewer</label>
+                                            @if (User.IsInRole("Supervisor"))
+                                            {
+                                                <select asp-for="ReviewerName" asp-items="Model.ReviewerOptions" class="form-select">
+                                                </select>
+                                            }
+                                            else
+                                            {
+                                                <input asp-for="ReviewerName" class="form-control" readonly />
+                                            }
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Final Disposition</label>
+                                            <select asp-for="FinalDisposition" class="form-select">
+                                                <option value="Approve">Approve</option>
+                                                <option value="Review">Review</option>
+                                                <option value="Reject">Reject</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3">
+                                        <div class="mb-3">
+                                            <label class="form-label">Reviewer Notes</label>
+                                            <div class="mb-2">
+                                                <button type="button" class="btn btn-sm btn-outline-danger me-1 note-template"
+                                                    data-note="Government Warning statement does not conform to federally prescribed requirements. Please revise and resubmit.">
+                                                    Government Warning
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-warning me-1 note-template"
+                                                    data-note="Alcohol content does not match the approved COLA. Please correct the label or submit an amended approval.">
+                                                    Alcohol Content
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-warning me-1 note-template"
+                                                    data-note="Net contents do not match the approved COLA. Please correct the production label.">
+                                                    Net Contents
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-warning me-1 note-template"
+                                                    data-note="Required sulfites statement is missing or does not match the required declaration.">
+                                                    Sulfites
+                                                </button>
+                                            </div>
+                                            <textarea asp-for="ReviewerNotes" id="ReviewerNotes" class="form-control" rows="5"></textarea>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-success mt-3">
+                                        Save Final Decision
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="tab-content">
+                <div class="tab-pane fade" id="data">
+                    <table class="table table-bordered table-striped">
+                        <thead>
+                            <tr>
+                                <th style="width:260px;">Field</th>
+                                <th>Extracted Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Brand Name</td>
+                                <td>@DisplayValue(Model.ApprovedProfile.BrandName)</td>
+                            </tr>
+                            <tr>
+                                <td>Fanciful Name</td>
+                                <td>@DisplayValue(Model.ApprovedProfile.FancifulName)</td>
+                            </tr>
+                            <tr>
+                                <td>Product Type</td>
+                                <td>@DisplayValue(Model.ApprovedProfile.ProductType)</td>
+                            </tr>
+                            <tr>
+                                <td>Class / Type</td>
+                                <td>@DisplayValue(Model.ApprovedProfile.ClassType)</td>
+                            </tr>
+                            <tr>
+                                <td>Alcohol Content</td>
+                                <td>@DisplayValue(Model.ApprovedProfile.AlcoholContent)</td>
+                            </tr>
+                            <tr>
+                                <td>Net Contents</td>
+                                <td>@DisplayValue(Model.ApprovedProfile.NetContents)</td>
+                            </tr>
+                            <tr>
+                                <td>Government Warning</td>
+                                <td>@DisplayValue(Model.ApprovedProfile.GovernmentWarning)</td>
+                            </tr>
+                            <tr>
+                                <td>Sulfites Statement</td>
+                                <td>@DisplayValue(Model.ApprovedProfile.SulfitesStatement)</td>
+                            </tr>
+                            <tr>
+                                <td>Producer Statement</td>
+                                <td>@DisplayValue(Model.ApprovedProfile.ProducerStatement)</td>
+                            </tr>
+                            <tr>
+                                <td>Country of Origin</td>
+                                <td>@DisplayValue(Model.ApprovedProfile.CountryOfOrigin)</td>
+                            </tr>
+                            <tr>
+                                <td>Formula Number</td>
+                                <td>@DisplayValue(Model.ApprovedProfile.FormulaNumber)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <button class="btn btn-outline-secondary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#colaOcr">
+                        View COLA Package OCR
+                    </button>
+
+                    <div id="colaOcr" class="collapse">
+                        <textarea class="form-control mb-3" rows="12" readonly>@Model.PackageOcrText</textarea>
+                    </div>
+                    <button class="btn btn-outline-secondary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#labelOcr">
+                        View Production Label OCR
+                    </button>
+                    <div id="labelOcr" class="collapse">
+                        <textarea class="form-control" rows="12" readonly>@Model.ProductionLabelOcrText</textarea>
+                    </div>
+                </div>
+            </div>
+        }
     }
-    <br />
-    <button class="btn btn-outline-secondary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#colaOcr">
-        View COLA Package OCR
-    </button>
-
-    <div id="colaOcr" class="collapse">
-        <textarea class="form-control mb-3" rows="12" readonly>@Model.PackageOcrText</textarea>
-    </div>
-
-    <button class="btn btn-outline-secondary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#labelOcr">
-        View Production Label OCR
-    </button>
-
-    <div id="labelOcr" class="collapse">
-        <textarea class="form-control" rows="12" readonly>@Model.ProductionLabelOcrText</textarea>
-    </div>
-}
+</div>
 
 @functions {
     private static string DisplayValue(string? value)
@@ -380,4 +430,25 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.querySelectorAll('.note-template').forEach(button => {
+            button.addEventListener('click', function () {
+                const note = this.getAttribute('data-note');
+                const textArea = document.getElementById('ReviewerNotes');
+
+                if (!textArea) {
+                    return;
+                }
+
+                if (textArea.value.trim().length > 0) {
+                    textArea.value += "\n\n" + note;
+                } else {
+                    textArea.value = note;
+                }
+
+                textArea.focus();
+            });
+        });
+    </script>
 }
