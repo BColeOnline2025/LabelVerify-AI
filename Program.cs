@@ -48,6 +48,7 @@ builder.Services.AddScoped<SulfitesValidator>();
 builder.Services.AddScoped<RecommendationEngine>();
 builder.Services.AddScoped<ReviewerCommentaryService>();
 builder.Services.AddScoped<GovernmentWarningLayoutValidator>();
+builder.Services.AddScoped<ComplianceInsightsService>();
 
 builder.Services.Configure<AzureVisionOptions>(builder.Configuration.GetSection("AzureVision"));
 builder.Services.Configure<ApplicationOptions>(builder.Configuration.GetSection("Application"));
