@@ -7,6 +7,7 @@
         public string ProductType { get; set; } = string.Empty;
         public string ClassType { get; set; } = string.Empty;
         public string AlcoholContent { get; set; } = string.Empty;
+        public string AlcoholContentStatement { get; set; } = string.Empty;
         public string NetContents { get; set; } = string.Empty;
         public string GovernmentWarning { get; set; } = string.Empty;
         public string SulfitesStatement { get; set; } = string.Empty;

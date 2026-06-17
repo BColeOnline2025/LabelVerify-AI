@@ -28,8 +28,8 @@ namespace LabelVerify.Web.Services
 
             checks.AddRange(_governmentWarningValidator.Validate(production.GovernmentWarning));
             checks.Add(_governmentWarningLayoutValidator.ValidateHeaderFontSize(production.GovernmentWarningHeaderHeight));
-            checks.AddRange(_alcoholContentValidator.Validate(approved.AlcoholContent, production.AlcoholContent));
-            checks.AddRange(_sulfitesValidator.Validate(approved.SulfitesStatement, production.SulfitesStatement));
+            checks.AddRange(_alcoholContentValidator.Validate(approved, production));
+            checks.AddRange(_sulfitesValidator.Validate(approved, production));
 
             var scoredChecks = checks
                 .Where(x => !x.WasSkipped)

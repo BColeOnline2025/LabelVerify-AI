@@ -29,5 +29,35 @@ namespace LabelVerify.Web.Services.Compliance
                 Notes = notes
             };
         }
+
+        protected FieldCheckResult NotApplicable(string fieldName, string note)
+        {
+            return new FieldCheckResult
+            {
+                FieldName = fieldName,
+                ExpectedValue = "Not Applicable",
+                ActualValue = "Not Applicable",
+                IsMatch = true,
+                WasSkipped = true,
+                Status = "Skipped",
+                ConfidenceScore = 0,
+                Notes = note
+            };
+        }
+
+        protected FieldCheckResult Skipped(string fieldName, string note)
+        {
+            return new FieldCheckResult
+            {
+                FieldName = fieldName,
+                ExpectedValue = "Not Applicable",
+                ActualValue = "Not Applicable",
+                IsMatch = true,
+                WasSkipped = true,
+                Status = "Skipped",
+                ConfidenceScore = 0,
+                Notes = note
+            };
+        }
     }
 }

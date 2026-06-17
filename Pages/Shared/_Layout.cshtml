@@ -28,12 +28,11 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
-                @{var currentUser = await _userManager.GetUserAsync(User);
-                    var myQueueCount = await ReviewBatchService.GetMyWorkQueueCountAsync(currentUser.DisplayName);
-                }
-
                 @if (User.Identity?.IsAuthenticated == true)
                 {
+                    var currentUser = await _userManager.GetUserAsync(User);
+                    var myQueueCount = await ReviewBatchService.GetMyWorkQueueCountAsync(currentUser.DisplayName);
+                    
                     <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                         <ul class="navbar-nav flex-grow-1">
                             <li class="nav-item">

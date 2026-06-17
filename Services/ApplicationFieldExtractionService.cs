@@ -24,6 +24,8 @@ namespace LabelVerify.Web.Services
 
         public ApprovedProductProfile ExtractOfficialTtb510031(string text)
         {
+            var alcoholContentStatement = ExtractAlcoholContentStatement(text);
+            
             return new ApprovedProductProfile
             {
                 BrandName = ExtractOfficialFieldValue(text, "6. BRAND NAME"),
@@ -31,13 +33,37 @@ namespace LabelVerify.Web.Services
                 ProductType = ExtractProductType(text),
                 ClassType = ExtractClassType(text),
                 FormulaNumber = ExtractOfficialFieldValue(text, "9. FORMULA"),
-                AlcoholContent = ExtractAlcoholContent(text),
+                AlcoholContent = ExtractAlcoholPercent(alcoholContentStatement),
+                AlcoholContentStatement = alcoholContentStatement,
                 NetContents = ExtractNetContents(text),
                 GovernmentWarning = ExtractGovernmentWarning(text),
                 SulfitesStatement = ExtractSulfitesStatement(text),
                 ProducerStatement = ExtractProducerStatement(text),
                 CountryOfOrigin = ExtractCountryOfOrigin(text)
             };
+        }
+
+        private static string ExtractAlcoholContentStatement(string text)
+        {
+            var match = Regex.Match(
+                text ?? "",
+                @"(?:ALCOHOL\s+\d{1,3}(?:\.\d+)?\s*%\s+BY\s+VOLUME)|
+          (?:\d{1,3}(?:\.\d+)?\s*%\s*ALC\.?\s*/\s*VOL\.?)|
+          (?:\d{1,3}(?:\.\d+)?\s*%\s*ALC\.?\s+BY\s+VOL\.?)|
+          (?:\d{1,3}(?:\.\d+)?\s*%\s*ALCOHOL\s+BY\s+VOLUME)",
+                RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace);
+
+            return match.Success ? match.Value.Trim() : string.Empty;
+        }
+
+        private static string ExtractAlcoholPercent(string statement)
+        {
+            if (string.IsNullOrWhiteSpace(statement))
+                return string.Empty;
+
+            var match = Regex.Match(statement, @"\d{1,3}(?:\.\d+)?\s*%");
+
+            return match.Success ? match.Value.Trim() : string.Empty;
         }
 
         private static string ExtractOfficialFieldValue(string text, string fieldLabel)

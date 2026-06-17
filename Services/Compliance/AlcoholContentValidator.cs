@@ -1,48 +1,147 @@
 ﻿using LabelVerify.Web.Models;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace LabelVerify.Web.Services.Compliance
 {
     public class AlcoholContentValidator : ComplianceValidatorBase
     {
-        public List<FieldCheckResult> Validate(string approved, string actual)
+        public List<FieldCheckResult> Validate(ApprovedProductProfile approved, LabelFacts production)
         {
-            var checks = new List<FieldCheckResult>();
-
-            checks.Add(ValidateExactPercentage(approved, actual));
-            checks.Add(ValidateFormat(approved, actual));
-
-            return checks;
+            return
+            [
+                ValidateAlcoholPercentage(approved, production),
+                ValidateAlcoholContentFormat(approved, production)
+            ];
         }
 
-        private FieldCheckResult ValidateExactPercentage(string approved, string actual)
+        private FieldCheckResult ValidateAlcoholPercentage(
+            ApprovedProductProfile approved,
+            LabelFacts production)
         {
-            var expectedPercent = ExtractPercent(approved);
-            var actualPercent = ExtractPercent(actual);
+            var approvedPercent = ExtractPercent(approved.AlcoholContent);
+            var productionPercent = ExtractPercent(production.AlcoholContent);
 
-            if (expectedPercent == actualPercent)
+            if (!approvedPercent.HasValue)
             {
-                return Pass("Alcohol Content Percentage", approved, actual, "Alcohol percentage matches approved COLA.");
+                return Fail(
+                    "Alcohol Content Percentage",
+                    approved.AlcoholContent,
+                    production.AlcoholContent,
+                    "Alcohol percentage not found on approved COLA.");
             }
 
-            return Fail("Alcohol Content Percentage", approved, actual, "Alcohol percentage differs from approved COLA.");
-        }
-
-        private FieldCheckResult ValidateFormat(string approved, string actual)
-        {
-            if (actual.Contains("ALC/VOL"))
+            if (!productionPercent.HasValue)
             {
-                return Pass("Alcohol Content Format", approved, actual, "Contains ALC/VOL statement.");
+                return Fail(
+                    "Alcohol Content Percentage",
+                    approved.AlcoholContent,
+                    production.AlcoholContent,
+                    "Alcohol percentage not found on production label.");
             }
 
-            return Fail("Alcohol Content Format", approved, actual, "Expected ALC/VOL statement.");
+            if (approvedPercent.Value == productionPercent.Value)
+            {
+                return Pass(
+                    "Alcohol Content Percentage",
+                    approved.AlcoholContent,
+                    production.AlcoholContent,
+                    $"Alcohol percentage matches approved COLA: {productionPercent:0.##}%.");
+            }
+
+            return Fail(
+                "Alcohol Content Percentage",
+                approved.AlcoholContent,
+                production.AlcoholContent,
+                $"Alcohol percentage differs. Approved COLA shows {approvedPercent:0.##}%, production label shows {productionPercent:0.##}%.");
         }
 
-        private decimal ExtractPercent(string value)
+        private FieldCheckResult ValidateAlcoholContentFormat(
+            ApprovedProductProfile approved,
+            LabelFacts production)
         {
-            var m = Regex.Match(value ?? "", @"(\d+(\.\d+)?)");
+            var approvedStatement = approved.AlcoholContentStatement;
+            var productionStatement = production.AlcoholContentStatement;
 
-            return m.Success ? decimal.Parse(m.Groups[1].Value) : 0;
+            var approvedFormat = ExtractAlcoholFormat(approvedStatement);
+            var productionFormat = ExtractAlcoholFormat(productionStatement);
+
+            if (approvedFormat is null)
+            {
+                return Fail(
+                    "Alcohol Content Format",
+                    approvedStatement,
+                    productionStatement,
+                    "Alcohol content format not found on approved COLA.");
+            }
+
+            if (productionFormat is null)
+            {
+                return Fail(
+                    "Alcohol Content Format",
+                    approvedFormat,
+                    string.IsNullOrWhiteSpace(productionStatement) ? "Not detected" : productionStatement,
+                    $"Alcohol content format not found on production label. Production AlcoholContent was '{production.AlcoholContent}'.");
+            }
+
+            if (approvedFormat == productionFormat)
+            {
+                return Pass(
+                    "Alcohol Content Format",
+                    approvedFormat,
+                    productionFormat,
+                    $"Alcohol content format matches: {productionFormat}.");
+            }
+
+            return Fail(
+                "Alcohol Content Format",
+                approvedFormat,
+                productionFormat,
+                $"Expected '{approvedFormat}' but found '{productionFormat}'.");
+        }
+
+        private static decimal? ExtractPercent(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return null;
+
+            var match = Regex.Match(
+                value,
+                @"(?<percent>\d{1,3}(?:\.\d+)?)\s*%",
+                RegexOptions.IgnoreCase);
+
+            if (!match.Success)
+                return null;
+
+            return decimal.TryParse(
+                match.Groups["percent"].Value,
+                NumberStyles.AllowDecimalPoint,
+                CultureInfo.InvariantCulture,
+                out var percent)
+                    ? percent
+                    : null;
+        }
+
+        private static string? ExtractAlcoholFormat(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return null;
+
+            var normalized = Regex.Replace(value.ToUpperInvariant(), @"\s+", " ").Trim();
+
+            if (Regex.IsMatch(normalized, @"ALC\.?\s*/\s*VOL\.?"))
+                return "ALC./VOL.";
+
+            if (Regex.IsMatch(normalized, @"ALC\.?\s+VOL\.?"))
+                return "ALC./VOL.";
+
+            if (Regex.IsMatch(normalized, @"ALC\.?\s+BY\s+VOL\.?"))
+                return "ALC. BY VOL.";
+
+            if (normalized.Contains("ALCOHOL") && normalized.Contains("BY VOLUME"))
+                return "ALCOHOL BY VOLUME";
+
+            return null;
         }
     }
 }

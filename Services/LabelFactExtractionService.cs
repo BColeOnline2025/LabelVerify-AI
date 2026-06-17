@@ -7,11 +7,14 @@ namespace LabelVerify.Web.Services
     {
         public LabelFacts Extract(string text)
         {
+            var alcoholContentStatement = ExtractAlcoholContentStatement(text);
+            
             return new LabelFacts
             {
                 BrandName = ExtractBrandCandidate(text),
                 ClassType = ExtractClassType(text),
-                AlcoholContent = ExtractAlcoholContent(text),
+                AlcoholContent = ExtractAlcoholPercent(alcoholContentStatement) ?? string.Empty,
+                AlcoholContentStatement = alcoholContentStatement,
                 NetContents = ExtractNetContents(text),
                 GovernmentWarning = ExtractGovernmentWarning(text),
                 Appellation = ExtractAppellation(text),
@@ -21,6 +24,54 @@ namespace LabelVerify.Web.Services
                 SulfitesStatement = ExtractSulfitesStatement(text),
                 CountryOfOrigin = ExtractCountryOfOrigin(text)
             };
+        }
+
+        private string ExtractAlcoholContentStatement(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return string.Empty;
+
+            var normalized = Regex.Replace(text, @"\s+", " ").Trim();
+
+            // First try normal same-line formats
+            var directMatch = Regex.Match(
+                normalized,
+                @"(?:ALCOHOL\s+\d{1,3}(?:\.\d+)?\s*%\s+BY\s+VOLUME)|
+          (?:\d{1,3}(?:\.\d+)?\s*%\s*ALC\.?\s*[/\s]?\s*VOL\.?)|
+          (?:\d{1,3}(?:\.\d+)?\s*%\s*ALC\.?\s+BY\s+VOL\.?)|
+          (?:\d{1,3}(?:\.\d+)?\s*%\s*ALCOHOL\s+BY\s+VOLUME)",
+                RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace);
+
+            if (directMatch.Success)
+                return directMatch.Value.Trim();
+
+            // Fallback: find percent anywhere near ALC/VOL wording
+            var percentMatch = Regex.Match(
+                normalized,
+                @"\d{1,3}(?:\.\d+)?\s*%",
+                RegexOptions.IgnoreCase);
+
+            var formatMatch = Regex.Match(
+                normalized,
+                @"ALC\.?\s*[/\s]?\s*VOL\.?|ALC\.?\s+BY\s+VOL\.?|ALCOHOL\s+BY\s+VOLUME",
+                RegexOptions.IgnoreCase);
+
+            if (percentMatch.Success && formatMatch.Success)
+            {
+                return $"{percentMatch.Value.Trim()} {formatMatch.Value.Trim()}";
+            }
+
+            return string.Empty;
+        }
+
+        private string ExtractAlcoholPercent(string? statement)
+        {
+            if (string.IsNullOrWhiteSpace(statement))
+                return null;
+
+            var match = Regex.Match(statement, @"\d{1,3}(?:\.\d+)?\s*%");
+
+            return match.Success ? match.Value.Trim() : null;
         }
 
         private static string ExtractBrandCandidate(string text)

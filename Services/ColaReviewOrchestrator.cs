@@ -313,7 +313,7 @@ namespace LabelVerify.Web.Services
             SetIfPresent(current.FancifulName, value => combined.FancifulName = value, "Fanciful Name", fileName, productionFieldSources);
             SetIfPresent(current.ClassType, value => combined.ClassType = value, "Class / Type", fileName, productionFieldSources);
             SetIfPresent(current.AlcoholContent, value => combined.AlcoholContent = value, "Alcohol Content", fileName, productionFieldSources);
-            SetIfPresent(current.NetContents, value => combined.NetContents = value, "Net Contents", fileName, productionFieldSources);
+            SetIfPresent(current.AlcoholContentStatement, value => combined.AlcoholContentStatement = value, "Alcohol Content Format", fileName, productionFieldSources); SetIfPresent(current.NetContents, value => combined.NetContents = value, "Net Contents", fileName, productionFieldSources);
             SetIfPresent(current.GovernmentWarning, value => combined.GovernmentWarning = value, "Government Warning", fileName, productionFieldSources);
             SetIfPresent(current.ProducerStatement, value => combined.ProducerStatement = value, "Producer Statement", fileName, productionFieldSources);
             SetIfPresent(current.CountryOfOrigin, value => combined.CountryOfOrigin = value, "Country of Origin", fileName, productionFieldSources);
@@ -355,10 +355,14 @@ namespace LabelVerify.Web.Services
                 {
                     check.SourceLabel = governmentWarningSource;
                 }
-                else if (
-                    check.FieldName.StartsWith("Alcohol Content") && productionFieldSources.TryGetValue("Alcohol Content", out var alcoholSource))
+                else if (check.FieldName.StartsWith("Alcohol Content") && productionFieldSources.TryGetValue("Alcohol Content", out var alcoholSource))
                 {
                     check.SourceLabel = alcoholSource;
+                }
+                else if (
+                    check.FieldName == "Alcohol Content Format" && productionFieldSources.TryGetValue("Alcohol Content Format", out var alcoholFormatSource))
+                {
+                    check.SourceLabel = alcoholFormatSource;
                 }
                 else if (
                     check.FieldName.StartsWith("Sulfites") && productionFieldSources.TryGetValue("Sulfites Statement", out var sulfiteSource))
