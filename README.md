@@ -643,6 +643,10 @@ TEFCA enabled ingestion
 
 Automatic workload balancing
 
+Unclear image validation
+
+Processing time optimization
+
 ---
 
 # Architectural Approach
