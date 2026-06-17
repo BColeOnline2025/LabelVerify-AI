@@ -1,4 +1,4 @@
-﻿# LabelVerify AI
+﻿# LabelVerify AI 
 
 ## AI-Assisted Alcohol Beverage Label Verification Platform
 
